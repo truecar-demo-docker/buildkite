@@ -6,10 +6,11 @@ RUN apt-get update \
       ca-certificates \
       curl \
       gnupg-agent \
-      python-pip \
+      python3 \
+      python3-pip \
       software-properties-common
 
-RUN pip install awscli
+RUN pip3 install awscli docker boto3
 
 RUN set -x \
   && curl -fsSL https://raw.githubusercontent.com/stedolan/jq/master/sig/jq-release.key | gpg --import \
