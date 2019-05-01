@@ -5,11 +5,15 @@ steps:
           build: agent
           image-repository: $REGISTRY_HOST/cache/buildkite
           from-cache: $REGISTRY_HOST/cache/buildkite:latest
+
+  - wait
+
+  - label: ':docker: Push cache:latest image'
+    plugins:
+      - docker-compose#v3.0.3:
           push:
             - agent:$REGISTRY_HOST/cache/buildkite:latest
 
-
-  - wait
 
   - label: Test
     plugins:
