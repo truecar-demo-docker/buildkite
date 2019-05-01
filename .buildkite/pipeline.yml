@@ -3,4 +3,16 @@ steps:
     plugins:
       - docker-compose#v3.0.3:
           build: agent
-          image-repository: $REGISTRY_HOST/buildkite
+          image-repository: $REGISTRY_HOST/cache/buildkite
+
+  - label: Test
+    command: buildkite-agent --version
+    plugins:
+      - docker-compose#v3.0.3:
+          run: agent
+
+  - label: ':docker: Push final image'
+    plugins:
+      - docker-compose#v3.0.3:
+          push:
+            - agent:$REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
