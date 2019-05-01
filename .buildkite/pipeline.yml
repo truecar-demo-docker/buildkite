@@ -4,8 +4,7 @@ steps:
       - docker-compose#v3.0.3:
           build: agent
           image-repository: $REGISTRY_HOST/cache/buildkite
-          cache-from:
-            - $REGISTRY_HOST/cache/buildkite:latest
+          cache-from: agent:$REGISTRY_HOST/cache/buildkite:latest
 
   - wait
 
