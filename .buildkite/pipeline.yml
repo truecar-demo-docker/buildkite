@@ -3,4 +3,4 @@ steps:
     plugins:
       - docker-compose#v3.0.3:
           build: agent
-          image-repository: $IMAGE_REPO/buildkite
+          image-repository: $REGISTRY_HOST/buildkite
