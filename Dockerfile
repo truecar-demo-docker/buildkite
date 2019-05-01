@@ -1,12 +1,14 @@
 FROM buildkite/agent:3-ubuntu
 
+VOLUME /usr/bin/buildkite-agent
+
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y \
       apt-transport-https \
       ca-certificates \
       curl \
       gnupg-agent \
-      python3 \
       python3-pip \
       software-properties-common
 
@@ -19,4 +21,8 @@ RUN set -x \
 
 RUN curl -fsSL https://s3-us-west-2.amazonaws.com/tc-build-binaries/docker-credential-ecr-login-v0.3.0-linux-x64.bin -o /usr/local/bin/docker-credential-ecr-login \
  && chmod +x /usr/local/bin/docker-credential-ecr-login
+
 COPY docker-config.json /root/.docker/config.json
+
+VOLUME /buildkite
+VOLUME /buildkite/builds

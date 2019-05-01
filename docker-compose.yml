@@ -1,0 +1,11 @@
+version: '3.2'
+services:
+  agent:
+    build: .
+    entrypoint: buildkite-agent-entrypoint
+    command: start
+    environment:
+      - BUILDKITE_AGENT_TOKEN
+      - BUILDKITE_AGENT_TAGS=environment=local,queue=agent-dev
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
