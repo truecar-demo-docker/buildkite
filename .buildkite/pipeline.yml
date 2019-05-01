@@ -6,7 +6,7 @@ steps:
           image-repository: $REGISTRY_HOST/cache/buildkite
           from-cache: $REGISTRY_HOST/cache/buildkite:latest
           push:
-            - $REGISTRY_HOST/cache/buildkite:latest
+            - agent:$REGISTRY_HOST/cache/buildkite:latest
 
 
   - wait
@@ -24,3 +24,4 @@ steps:
       - docker-compose#v3.0.3:
           push:
             - agent:$REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
+            - agent:$REGISTRY_HOST/buildkite:latest
