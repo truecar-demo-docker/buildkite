@@ -2,5 +2,5 @@ steps:
   - label: ':docker: Build'
     plugins:
       - docker-compose#v3.0.3:
-          build: .
+          build: agent
           image-repository: $IMAGE_REPO/buildkite
