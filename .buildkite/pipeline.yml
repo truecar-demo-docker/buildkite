@@ -5,11 +5,15 @@ steps:
           build: agent
           image-repository: $REGISTRY_HOST/cache/buildkite
 
+  - wait
+
   - label: Test
     command: buildkite-agent --version
     plugins:
       - docker-compose#v3.0.3:
           run: agent
+
+  - wait
 
   - label: ':docker: Push final image'
     plugins:
