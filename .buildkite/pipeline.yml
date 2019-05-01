@@ -8,10 +8,10 @@ steps:
   - wait
 
   - label: Test
-    command: --version
     plugins:
       - docker-compose#v3.0.3:
           run: agent
+          command: [ --version ]
 
   - wait
 
