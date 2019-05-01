@@ -1,8 +1,6 @@
-env:
-  BUILDKITE_AGENT_TOKEN: ssm-parameter:/buildkite/token
-
 steps:
   - label: ':docker: Build'
     plugins:
       - docker-compose#v3.0.3:
           build: .
+          image-repository: $IMAGE_REPO/buildkite
