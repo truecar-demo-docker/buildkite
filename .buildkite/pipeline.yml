@@ -16,7 +16,7 @@ steps:
 
 
   - label: Test
-    command: /test.sh
+    command: bash /test.sh
     plugins:
       - docker-compose#v3.0.3:
           run: agent
