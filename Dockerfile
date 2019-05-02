@@ -33,6 +33,7 @@ RUN set -x \
   && curl -fsSL https://raw.githubusercontent.com/stedolan/jq/master/sig/jq-release.key | gpg --import \
   && curl -fsSL https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64 -o /usr/local/bin/jq \
   && curl -fsSL https://raw.githubusercontent.com/stedolan/jq/master/sig/v${JQ_VERSION}/jq-linux64.asc | gpg --verify - /usr/local/bin/jq
+  && chmod +x /usr/local/bin/jq
 
 ARG ECR_HELPER_VERSION=0.3.0
 RUN curl -fsSL https://s3-us-west-2.amazonaws.com/tc-build-binaries/docker-credential-ecr-login-v${ECR_HELPER_VERSION}-linux-x64.bin -o /usr/local/bin/docker-credential-ecr-login \
