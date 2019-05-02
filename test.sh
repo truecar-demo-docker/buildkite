@@ -1,6 +1,7 @@
 #!bin/bash
 
 set -euo pipefail
+set -x
 
 test -x /buildkite/bootstrap-via-docker
 # ensure /buildkite volume has captured the binary linked into the /buildkite/bin dir before volume's creation
