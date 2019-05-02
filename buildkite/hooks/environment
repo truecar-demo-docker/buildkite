@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -euo pipefail
+
+eval "$(python3 "$BUILDKITE_HOOKS_PATH/environment.py" || echo false)"

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# This file is sourced by bash within the Buildkite context due to the BASH_ENV variable being set to this script.
+
+export PS4='% DEBUG/bash[$BASHPID] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]}() - [${SHLVL},${BASH_SUBSHELL},$?] '
+
+[[ ${BASH_DEBUG:-false} = true ]] && set -x

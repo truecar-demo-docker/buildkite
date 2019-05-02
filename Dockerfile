@@ -39,24 +39,41 @@ ARG ECR_HELPER_VERSION=0.3.0
 RUN curl -fsSL https://s3-us-west-2.amazonaws.com/tc-build-binaries/docker-credential-ecr-login-v${ECR_HELPER_VERSION}-linux-x64.bin -o /usr/local/bin/docker-credential-ecr-login \
   && chmod +x /usr/local/bin/docker-credential-ecr-login
 
-RUN mkdir -p /buildkite/builds /buildkite/hooks /buildkite/plugins /buildkite/bin
-VOLUME /buildkite/builds
-VOLUME /buildkite/plugins
-VOLUME /buildkite/hooks
-
 ARG BUILDKITE_AGENT_VERSION="3.11.*"
 RUN set -x \
  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32A37959C2FA5C3C99EFBC32A79206696452D198 \
  && add-apt-repository "deb https://apt.buildkite.com/buildkite-agent stable main" \
  && apt-get update \
  && apt-get install -y "buildkite-agent=${BUILDKITE_AGENT_VERSION}" \
- && ln /usr/bin/buildkite-agent /buildkite/bin/buildkite-agent
 
-# make the binary available in a volume for sharing with bootstrap containers
-VOLUME /buildkite/bin
+RUN mkdir -pv \
+      /buildkite/builds \
+      /buildkite/hooks \
+      /buildkite/plugins \
+      /buildkite/bin
+
+ENV BUILDKITE_BUILD_PATH /buildkite/builds
+ENV BUILDKITE_HOOKS_PATH /buildkite/hooks
+ENV BUILDKITE_PLUGINS_PATH /buildkite/plugins
+
+# For each container, these start out empty unless a host path is mounted
+VOLUME /buildkite/builds
+VOLUME /buildkite/plugins
 
 COPY docker-config.json /root/.docker/config.json
 COPY entrypoint.sh /buildkite-entrypoint.sh
+COPY ./buildkite/ /buildkite
+
+# make the binary available in a volume for sharing with bootstrap containers
+RUN ln -v /usr/bin/buildkite-agent /buildkite/bin/buildkite-agent
+
+# Grab the /buildkite dir and its contents as a volume
+VOLUME /buildkite
+
+ENV BASH_ENV /buildkite/resources/bash_env
+# dont use config file:
+ENV BUILDKITE_AGENT_CONFIG=''
+ENV BUILDKITE_BOOTSTRAP_SCRIPT_PATH /buildkite/bin/bootstrap-via-docker
 
 ENTRYPOINT ["/buildkite-entrypoint.sh"]
 CMD ["buildkite-agent", "start"]
