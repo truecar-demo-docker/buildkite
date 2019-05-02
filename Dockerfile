@@ -44,7 +44,7 @@ RUN set -x \
  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32A37959C2FA5C3C99EFBC32A79206696452D198 \
  && add-apt-repository "deb https://apt.buildkite.com/buildkite-agent stable main" \
  && apt-get update \
- && apt-get install -y "buildkite-agent=${BUILDKITE_AGENT_VERSION}" \
+ && apt-get install -y "buildkite-agent=${BUILDKITE_AGENT_VERSION}"
 
 RUN mkdir -pv \
       /buildkite/builds \
