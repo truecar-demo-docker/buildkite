@@ -1,3 +1,7 @@
 {
 	"credsStore": "ecr-login"
+  FIXME: change this to dynamically add
+  "credHelpers": {
+    "${REGISTRY_HOST}": "ecr-login"
+  },
 }
