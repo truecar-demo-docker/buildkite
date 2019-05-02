@@ -16,10 +16,10 @@ steps:
 
 
   - label: Test
+    command: buildkite-agent --version
     plugins:
       - docker-compose#v3.0.3:
           run: agent
-          command: [ --version ]
 
   - wait
 
