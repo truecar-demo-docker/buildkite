@@ -63,6 +63,7 @@ VOLUME /buildkite/plugins
 COPY docker-config.json /root/.docker/config.json
 COPY entrypoint.sh /buildkite-entrypoint.sh
 COPY ./buildkite/ /buildkite
+COPY test.sh /test.sh
 
 # make the binary available in a volume for sharing with bootstrap containers
 RUN ln -v /usr/bin/buildkite-agent /buildkite/bin/buildkite-agent
