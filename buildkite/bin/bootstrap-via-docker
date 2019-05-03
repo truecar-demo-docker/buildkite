@@ -83,7 +83,7 @@ def build_environment():
     if env_file:
         with open(env_file, 'r') as f:
             for line in f.readlines():
-                var, value = line.strip().split('=', 2)
+                var, value = line.strip().split('=', 1)
                 value = unescape_value(value)
                 env[var] = value
         # since the file isn't available to the bootstrap container, unset this var
