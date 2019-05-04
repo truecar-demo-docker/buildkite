@@ -60,21 +60,22 @@ ENV BUILDKITE_PLUGINS_PATH /buildkite/plugins
 VOLUME /buildkite/builds
 VOLUME /buildkite/plugins
 
+# make the binary available in a volume for sharing with bootstrap containers
+RUN ln -v /usr/bin/buildkite-agent /buildkite/bin/buildkite-agent
+VOLUME /buildkite/bin
+
 COPY docker-config.json /root/.docker/config.json
 COPY entrypoint.sh /buildkite-entrypoint.sh
 COPY ./buildkite/ /buildkite
 COPY test.sh /test.sh
 
-# make the binary available in a volume for sharing with bootstrap containers
-RUN ln -v /usr/bin/buildkite-agent /buildkite/bin/buildkite-agent
-
 # Grab the /buildkite dir and its contents as a volume
-VOLUME /buildkite
+# VOLUME /buildkite
 
 ENV BASH_ENV /buildkite/resources/bash_env
 # dont use config file:
 ENV BUILDKITE_AGENT_CONFIG=''
-ENV BUILDKITE_BOOTSTRAP_SCRIPT_PATH /buildkite/bin/bootstrap-via-docker
+ENV BUILDKITE_BOOTSTRAP_SCRIPT_PATH /buildkite/bootstrap-via-docker
 
 ENTRYPOINT ["/buildkite-entrypoint.sh"]
 CMD ["/buildkite/bin/buildkite-agent", "start"]
