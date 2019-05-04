@@ -77,4 +77,4 @@ ENV BUILDKITE_AGENT_CONFIG=''
 ENV BUILDKITE_BOOTSTRAP_SCRIPT_PATH /buildkite/bin/bootstrap-via-docker
 
 ENTRYPOINT ["/buildkite-entrypoint.sh"]
-CMD ["buildkite-agent", "start"]
+CMD ["/buildkite/bin/buildkite-agent", "start"]
