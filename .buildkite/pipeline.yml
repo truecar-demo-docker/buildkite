@@ -25,16 +25,17 @@ steps:
 
   - wait
 
-  - label: ':docker: Push final image'
+  - label: ':docker: Push final image :latest'
     plugins:
       - docker-compose#v3.0.3:
           push:
             - agent:$REGISTRY_HOST/buildkite:latest
 
-  - label: ':docker: Push final image'
+  - label: ':docker: Push final image :${BUILDKITE_BUILD_NUMBER}'
     plugins:
       - docker-compose#v3.0.3:
           push:
             - agent:$REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
 
+  - wait
   - command: buildkite-agent meta-data set docker.image_repo $REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
