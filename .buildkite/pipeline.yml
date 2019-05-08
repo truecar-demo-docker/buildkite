@@ -20,8 +20,6 @@ steps:
     plugins:
       - docker-compose#v3.0.3:
           run: agent
-          volumes:
-            - ./test.sh:/test.sh
 
   - wait
 
