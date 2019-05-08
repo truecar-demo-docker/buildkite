@@ -55,14 +55,14 @@ for var, value in os.environ.items():
     match = ssm_param_pattern.match(value)
     if match is not None:
         key = match.group(1)
-        value = resolve_ssm_var(key)
+        value = resolve_ssm_var(var, key)
         export_var(var, value)
         continue
 
     match = metadata_param_pattern.match(value)
     if match is not None:
         key = match.group(1)
-        value = buildkite_metadata_get(key)
+        value = buildkite_metadata_get(var, key)
         export_var(var, value)
         continue
 
