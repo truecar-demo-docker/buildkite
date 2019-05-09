@@ -9,8 +9,10 @@ import subprocess
 
 import boto3
 from botocore.exceptions import ClientError, ParamValidationError
+from botocore.config import Config
 
-ssm = boto3.client('ssm')
+boto_config = Config(retries=dict(max_attempts=30))
+ssm = boto3.client('ssm', config=boto_config)
 
 ssm_param_pattern = re.compile('^ssm-parameter:(.+)$')
 metadata_param_pattern = re.compile('^buildkite-meta-data:(.+)$')
