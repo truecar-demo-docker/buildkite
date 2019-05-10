@@ -48,11 +48,11 @@ def resolve_ssm_var(var, param_path):
 
 
 def export_var(var, value):
-    if value:
-        print(f"export {var}='{value}'")
-    else:
+    if value is None:
         warn(f"WARNING: Variable {var} was resolved to None (likely an error "
-             "occurred); variable value will remain unchanged.")
+             "occurred); variable value will be set null ('').")
+        value = ''
+    print(f"export {var}='{value}'")
 
 
 for var, value in os.environ.items():
