@@ -47,7 +47,7 @@ def docker_image():
     else:
         tag = 'latest'
 
-    print(f'--- Pulling bootstrap docker image {repo}:{tag} ...')
+    print(f'~~~ Pulling bootstrap docker image {repo}:{tag} ...')
     return docker_client.images.pull(repo, tag)
 
 
@@ -112,14 +112,15 @@ volumes = {}
 
 docker_run_args = {
     'image': image.id,
-    'entrypoint': 'buildkite-agent',
-    'command': ['bootstrap'],
+    'entrypoint': '/buildkite-entrypoint.sh',
+    'command': ['buildkite-agent', 'bootstrap'],
     'name': f'buildkite-build-{build_id}-bootstrap-{job_id}',
     'labels': {
         'tc.buildkite.build_id': build_id,
         'tc.buildkite.job_id': job_id,
         'com.datadoghq.ad.logs': json.dumps(datadog_logs_config,
-                                            indent=None, sort_keys=True, separators=(',', ':')),
+                                            indent=None, sort_keys=True,
+                                            separators=(',', ':')),
     },
     'volumes_from': [self_container_id()],
     'volumes': volumes,
@@ -128,14 +129,14 @@ docker_run_args = {
     'log_config': LogConfig(
         type='local',
     ),
- }
+}
 
 
 if cgroup_parent():
     docker_run_args['cgroup_parent'] = cgroup_parent()
 
 
-print('--- Creating Bootstrap container')
+print('~~~ Creating Bootstrap container')
 
 if os.environ.get('BUILDKITE_AGENT_DEBUG', False):
     print('Container config:')
@@ -146,5 +147,5 @@ container = docker_client.containers.create(**docker_run_args)
 if os.environ.get('BUILDKITE_AGENT_DEBUG', False):
     print(f'Bootstrap container created. name={container.name} id={container.id}')
 
-print(f'+++ Starting Bootstrap')
+print(f'~~~ Starting Bootstrap')
 os.execl('/usr/bin/docker', 'docker', 'start', '--attach', container.id)
