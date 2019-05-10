@@ -47,6 +47,7 @@ def export_var(var, value):
     if value:
         print(f"export {var}='{value}'")
     else:
+        print("^^^ +++", file=sys.stderr) # tell buildkite to expand this section in the log output, to reveal this warning
         print(f"WARNING: Variable {var} was resolved to None (likely an error "
               "occurred); variable will NOT be present in build.",
               file=sys.stderr)
