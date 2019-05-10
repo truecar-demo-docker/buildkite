@@ -1,5 +1,3 @@
 #!/bin/bash
-
-set -euo pipefail
-
+set +x # disable set -x for this hook, as it might be set via BASH_DEBUG from bash_env
 eval "$(python3 "$BUILDKITE_HOOKS_PATH/environment.py" || echo false)"
