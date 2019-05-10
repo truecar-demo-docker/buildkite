@@ -18,14 +18,18 @@ ssm_param_pattern = re.compile('^ssm-parameter:(.+)$')
 metadata_param_pattern = re.compile('^buildkite-meta-data:(.+)$')
 
 
+def warn(str):
+    print("^^^ +++", file=sys.stderr) # tell buildkite to expand this section in the log output, to reveal this warning
+    print(f'\x1b[31m{str}\x1b[0m', file=sys.stderr)
+
+
 def buildkite_metadata_get(var, key):
     try:
         command = ['buildkite-agent', 'meta-data', 'get', key]
         return subprocess.check_output(command).decode().rstrip('\n')
     except subprocess.CalledProcessError as e:
-        print(f'ERROR while attempting to resolve ${var} using buildkite '
-              f'meta-data {key}: exit={e.returncode}',
-              file=sys.stderr)
+        warn(f'ERROR while attempting to resolve ${var} using buildkite '
+             f'meta-data {key}: exit={e.returncode}')
 
 
 def resolve_ssm_var(var, param_path):
@@ -33,25 +37,22 @@ def resolve_ssm_var(var, param_path):
         resp = ssm.get_parameter(Name=param_path, WithDecryption=True)
         return resp['Parameter']['Value']
     except ssm.exceptions.ParameterNotFound:
-        print(f'ERROR while resolving var {var} using SSM parameter {key}: '
-              'ParameterNotFound', file=sys.stderr)
+        warn(f'ERROR while resolving var {var} using SSM parameter {key}: '
+             'ParameterNotFound')
     except ParamValidationError as e:
-        print("ERROR boto3.ParamValidationError while resolving var {var} "
-              f"using SSM parameter {key}: {e}", file=sys.stderr)
+        warn("ERROR boto3.ParamValidationError while resolving var {var} "
+             f"using SSM parameter {key}: {e}")
     except ClientError as e:
-        print(f'ERROR boto3.ClientError while resolving var {var} using SSM '
-              f'parameter {key}: {e}', file=sys.stderr)
+        warn(f'ERROR boto3.ClientError while resolving var {var} using SSM '
+             f'parameter {key}: {e}')
 
 
 def export_var(var, value):
     if value:
         print(f"export {var}='{value}'")
     else:
-        print("^^^ +++", file=sys.stderr) # tell buildkite to expand this section in the log output, to reveal this warning
-        print(f"WARNING: Variable {var} was resolved to None (likely an error "
-              "occurred); variable will NOT be present in build.",
-              file=sys.stderr)
-        print(f'unset {var}')
+        warn(f"WARNING: Variable {var} was resolved to None (likely an error "
+             "occurred); variable value will remain unchanged.")
 
 
 for var, value in os.environ.items():
