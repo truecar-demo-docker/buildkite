@@ -25,7 +25,7 @@ function configure_environment() {
     fi
 
     [[ -n ${EC2_INSTANCE_ID:-} ]] && {
-        export BUILDKITE_AGENT_NAME="${EC2_INSTANCE_ID}-%hostname"
+        export BUILDKITE_AGENT_NAME="${EC2_INSTANCE_ID}-${HOSTNAME:-$(hostname)}"
         export BUILDKITE_AGENT_TAGS="instance_id=${EC2_INSTANCE_ID},${BUILDKITE_AGENT_TAGS:-}"
     }
 
