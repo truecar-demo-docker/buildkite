@@ -46,6 +46,12 @@ RUN set -x \
  && apt-get update \
  && apt-get install -y "buildkite-agent=${BUILDKITE_AGENT_VERSION}"
 
+RUN set -x \
+  && add-apt-repository ppa:git-core/ppa \
+  && apt-get update \
+  && apt-get install -y git-lfs \
+  && git lfs install
+
 RUN mkdir -pv \
       /buildkite/builds \
       /buildkite/hooks \
