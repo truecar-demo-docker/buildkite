@@ -49,6 +49,7 @@ RUN set -x \
 RUN set -x \
   && add-apt-repository ppa:git-core/ppa \
   && apt-get update \
+  && apt-get upgrade -y git \
   && apt-get install -y git-lfs \
   && git lfs install
 

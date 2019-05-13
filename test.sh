@@ -12,3 +12,5 @@ docker-compose version
 docker version
 aws --version
 docker-credential-ecr-login version
+git version
+git lfs version
