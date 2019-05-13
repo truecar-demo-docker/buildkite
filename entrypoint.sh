@@ -24,15 +24,23 @@ function configure_environment() {
         set +o allexport
     fi
 
+    agent_tags=(
+        "started=$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    )
+
     [[ -n ${EC2_INSTANCE_ID:-} ]] && {
         export BUILDKITE_AGENT_NAME="${EC2_INSTANCE_ID}-${HOSTNAME:-$(hostname)}"
-        export BUILDKITE_AGENT_TAGS="instance_id=${EC2_INSTANCE_ID},${BUILDKITE_AGENT_TAGS:-}"
+        agent_tags+=( "instance_id=${EC2_INSTANCE_ID}" )
     }
 
-    [[ ${EC2_PRIVATE_IP:-} ]] && export BUILDKITE_AGENT_TAGS="ip_address=${EC2_PRIVATE_IP},${BUILDKITE_AGENT_TAGS:-}"
+    [[ ${EC2_PRIVATE_IP:-} ]] && agent_tags+=( "ip_address=${EC2_PRIVATE_IP}" )
 
     local this_image_id="$(docker inspect "$(container_id)" | jq -r '.[0].Image')"
-    [[ ${this_image_id:-} ]] && export BUILDKITE_AGENT_TAGS="agent_docker_image=${this_image_id},${BUILDKITE_AGENT_TAGS:-}"
+    [[ ${this_image_id:-} ]] && agent_tags+=( "agent_docker_image=${this_image_id}" )
+
+    for tag in ${agent_tags[@]}; do
+        export BUILDKITE_AGENT_TAGS="${BUILDKITE_AGENT_TAGS+${BUILDKITE_AGENT_TAGS},}${tag}"
+    done
 }
 
 function configure_docker() {
