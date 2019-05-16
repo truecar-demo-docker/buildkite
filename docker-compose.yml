@@ -8,5 +8,5 @@ services:
       - BUILDKITE_AGENT_TAGS=environment=local,queue=agent-dev
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
-      - ./test.sh:/test.sh
+      - ./test/:/test
       - ./entrypoint.sh:/buildkite-entrypoint.sh
