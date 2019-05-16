@@ -3,9 +3,9 @@ services:
   agent:
     build: .
     environment:
-      - BUILDKITE_AGENT_TOKEN
-      - BUILDKITE_AGENT_DEBUG
       - BUILDKITE_AGENT_TAGS=environment=local,queue=agent-dev
+    env_file:
+      - .env
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - ./test/:/test

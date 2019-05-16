@@ -23,10 +23,7 @@ ARG DOCKER_COMPOSE_VERSION=1.24.0
 RUN curl -fsSL "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
  && chmod +x /usr/local/bin/docker-compose
 
-RUN pip3 install \
-  awscli \
-  boto3 \
-  docker
+RUN pip3 install awscli
 
 ARG JQ_VERSION=1.6
 RUN set -x \
@@ -74,7 +71,11 @@ VOLUME /buildkite/bin
 COPY docker-config.json /root/.docker/config.json
 COPY entrypoint.sh /buildkite-entrypoint.sh
 COPY ./buildkite/ /buildkite
-COPY test.sh /test.sh
+
+COPY pylib/requirements.txt /opt/python-src/requirements.txt
+RUN cd /opt/python-src && pip3 install -r requirements.txt
+COPY pylib/ /opt/python-src/
+RUN pip3 install -e /opt/python-src/
 
 # Grab the /buildkite dir and its contents as a volume
 # VOLUME /buildkite
