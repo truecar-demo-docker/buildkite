@@ -17,6 +17,7 @@ sts = boto3.client('sts')
 
 # environment variables from os.environ to pass on to bootstrap container
 environment_whitelist = [
+    'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI',
     'AWS_EXECUTION_ENV',
     'AWS_REGION',
     'BASH_ENV',
@@ -144,16 +145,22 @@ def provision_aws_access(build_env):
                                                  'buildkite', build_env["BUILDKITE_PIPELINE_SLUG"],
                                                  'build', 'config'])
 
+    # disable access to the ECS task role which may have been passed from the agent
+    del build_env['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI']
+
     return build_env
 
 
 def build_container_config():
+    build_env = build_environment(os.environ)
+    if os.environ.get('BUILDKITE_USE_MASTERMIND', 'false') == 'true':
+        build_env = provision_aws_access(build_env)
+
     job_id = os.environ['BUILDKITE_JOB_ID']
     build_id = os.environ['BUILDKITE_BUILD_ID']
     job_label = os.environ.get('BUILDKITE_LABEL', '')
     project_slug = os.environ.get('BUILDKITE_PROJECT_SLUG', '')
     image = docker_image()
-    build_env = provision_aws_access(build_environment(os.environ))
     datadog_logs_config = {
         'buildkite.bootstrap.docker_image': image.id,
         'buildkite.build-id': build_id,
