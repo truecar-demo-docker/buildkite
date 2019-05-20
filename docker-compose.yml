@@ -1,12 +1,22 @@
 version: '3.2'
+volumes:
+  buildkite-builds: {}
+  buildkite-plugins: {}
 services:
   agent:
     build: .
     environment:
       - BUILDKITE_AGENT_TAGS=environment=local,queue=agent-dev
+      - AWS_REGION=us-west-2
+      - AWS_ACCOUNT_ID=221344006312
     env_file:
       - .env
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - ./test/:/test
       - ./entrypoint.sh:/buildkite-entrypoint.sh
+      - ./buildkite/hooks:/buildkite/hooks
+      - ./buildkite/bootstrap-via-docker:/buildkite/bootstrap-via-docker
+      - ./buildkite/resources:/buildkite/resources
+      - buildkite-plugins:/buildkite/plugins
+      - buildkite-builds:/buildkite/builds

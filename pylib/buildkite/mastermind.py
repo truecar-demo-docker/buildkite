@@ -1,23 +1,138 @@
-import sys
-import time
+import os
 import json
 import re
+from datetime import datetime, timedelta
+from time import sleep
 from urllib.request import urlopen
-from urllib.parse import urlsplit, urlunsplit
-from urllib.error import HTTPError
+from urllib.parse import urlsplit, urlunsplit, urljoin
+
+import requests
+import boto3
+
+from buildkite.util import print_debug
+
 
 class AccessDocumentFormatError(Exception):
     pass
+
 
 class UnsupportedCloneURL(Exception):
     pass
 
 
+class TimeoutError(Exception):
+    pass
+
+
 env_var_placeholder_pattern = re.compile('@@([a-zA-Z0-9_]+)@@')
+sts = boto3.client('sts')
 
 
 def request_access(access_document):
-    pass
+    url = urljoin(os.environ['MASTERMIND_ENDPOINT'], 'role')
+    body = role_request(access_document)
+    print_debug(f'Requesting role from Mastermind:\n{body}')
+    deadline = datetime.now() + timedelta(minutes=10)
+    while True:
+        resp = requests.post(url, auth=('buildkite', os.environ['MASTERMIND_API_KEY']), json=body)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 202:
+            now = datetime.now()
+            if now > deadline:
+                raise TimeoutError('Timeout while waiting for Mastermind approval. Recommend retrying this job.')
+            print(f'Waiting {(deadline - now).total_seconds()}s longer for approval...')
+            sleep(10)
+        else:
+            print(f'Error {resp.status_code} from Mastermind while requesting role')
+            print(resp.text)
+            resp.raise_for_status()
+
+
+def role_request(access_document):
+    slug = os.environ["BUILDKITE_PIPELINE_SLUG"]
+    aws_region = os.environ['AWS_REGION']
+    aws_account_id = os.environ['AWS_ACCOUNT_ID']
+    caller_identity = sts.get_caller_identity()
+
+    print_debug({ 'caller_identity': caller_identity })
+
+    default_permissions = [
+        {
+            'arns': [
+                f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/build/common/*',
+                f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/build/{slug}/*',
+            ],
+            'actions': [
+                'ssm:getparameter',
+                'ssm:getparameters',
+                'ssm:getparametersbypath',
+            ]
+        },
+        {
+            'arns': [
+                'arn:aws:lambda:us-west-2:221344006312:function:build-numbers',
+            ],
+            'actions': [
+                'lambda:invokefunction',
+            ]
+        },
+        {
+            'arns': [
+                'arn:aws:s3:::tc-build-scratch',
+                'arn:aws:s3:::tc-build-scratch/*',
+            ],
+            'actions': [
+                's3:getobject',
+                's3:putobject',
+                's3:deleteobject',
+                's3:getobjectversion',
+                's3:listbucket',
+            ]
+        },
+        {
+            'arns': [
+                f'arn:aws:ecr:{aws_region}:{aws_account_id}:*',
+            ],
+            'actions': [
+                'ecr:getauthorizationtoken',
+                'ecr:describerepositories',
+            ],
+        },
+        {
+            'arns': [
+                f'arn:aws:ecr:{aws_region}:{aws_account_id}:repository/*',
+            ],
+            'actions': [
+                'ecr:batchchecklayeravailability',
+                'ecr:getdownloadurlforlayer',
+                'ecr:getrepositorypolicy',
+                'ecr:listimages',
+                'ecr:describeimages',
+                'ecr:batchgetimage',
+                'ecr:initiatelayerupload',
+                'ecr:uploadlayerpart',
+                'ecr:completelayerupload',
+                'ecr:putimage',
+            ],
+        },
+    ]
+
+    resources = default_permissions
+    if access_document is not None:
+        resources = resources + access_document.get('common', {}).get('resources', [])
+
+    return {
+        'project_identifier': f'buildkite/{slug}',
+        'environment': 'build',
+        'principal': {
+            'type': 'AWS',
+            'value': caller_identity['Arn'],
+        },
+        'permissions': {
+            'resources': resources,
+        },
+    }
 
 
 def github_raw_url_from_clone_url(clone_url, ref, path):

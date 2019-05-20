@@ -1,3 +1,27 @@
 #!/bin/bash
-set +x # disable set -x for this hook, as it might be set via BASH_DEBUG from bash_env
+
+set -euo pipefail
+
+if [[ ${MASTERMIND_AWS_CONFIG_FILE_URL:-} ]]; then
+    mkdir -pv "$HOME/.aws"
+
+    cat <<EOF > "$HOME/.aws/credentials"
+[root]
+aws_access_key_id = ${MASTERMIND_ACCESS_KEY_ID}
+aws_secret_access_key = ${MASTERMIND_SECRET_ACCESS_KEY}
+aws_session_token = ${MASTERMIND_SESSION_TOKEN}
+EOF
+
+    aws s3 --profile root cp "${MASTERMIND_AWS_CONFIG_FILE_URL}" "$HOME/.aws/config"
+    sed -i 's:credential_source\s*=\s*EcsContainer:source_profile = root:g' "$HOME/.aws/config"
+
+    [[ ${BUILDKITE_AGENT_DEBUG:-} ]] && cat "$HOME/.aws/config"
+
+    export AWS_PROFILE=default
+    export AWS_SDK_LOAD_CONFIG=true
+
+    # sanity check
+    aws sts get-caller-identity
+fi
+
 eval "$(python3 "$BUILDKITE_HOOKS_PATH/environment.py" || echo false)"

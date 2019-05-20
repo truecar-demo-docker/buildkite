@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
-[[ ${BUILDKITE_AGENT_DEBUG:-false} = true ]] && set -xv
+[[ ${BASH_DEBUG:-false} = true ]] && set -x
 
 function copy_binary() {
     # /buildkite/bin is mounted as a host volume to make the binary available for

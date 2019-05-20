@@ -11,8 +11,11 @@ import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config
 
+from buildkite.util import print_warn
+
 boto_config = Config(retries=dict(max_attempts=30))
 ssm = boto3.client('ssm', config=boto_config)
+# s3 = boto3.client('s3', config=boto_config)
 
 ssm_param_pattern = re.compile('^ssm-parameter:(.+)$')
 metadata_param_pattern = re.compile('^buildkite-meta-data:(.+)$')
@@ -55,19 +58,28 @@ def export_var(var, value):
     print(f"export {var}='{value}'")
 
 
-for var, value in os.environ.items():
-    match = ssm_param_pattern.match(value)
-    if match is not None:
-        key = match.group(1)
-        value = resolve_ssm_var(var, key)
-        export_var(var, value)
-        continue
+def print_environment_exports():
+    for var, value in os.environ.items():
+        match = ssm_param_pattern.match(value)
+        if match is not None:
+            key = match.group(1)
+            value = resolve_ssm_var(var, key)
+            export_var(var, value)
+            continue
 
-    match = metadata_param_pattern.match(value)
-    if match is not None:
-        key = match.group(1)
-        value = buildkite_metadata_get(var, key)
-        export_var(var, value)
-        continue
+        match = metadata_param_pattern.match(value)
+        if match is not None:
+            key = match.group(1)
+            value = buildkite_metadata_get(var, key)
+            export_var(var, value)
+            continue
 
-    # else: no-op, don't export an overriden value for this var
+        # else: no-op, don't export an overriden value for this var
+
+
+def main():
+    print_environment_exports()
+
+
+if __name__ == '__main__':
+    main()

@@ -1,13 +1,11 @@
-import sys
 import os
 import time
 from os.path import basename
 import json
-import re
-from urllib.request import urlopen
-from urllib.parse import urlsplit, urlunsplit
 from urllib.error import HTTPError
+from urllib.parse import urljoin
 
+import boto3
 import docker
 from docker.types import LogConfig
 
@@ -15,6 +13,16 @@ from buildkite.util import print_warn
 import buildkite.mastermind as mastermind
 
 docker_client = docker.from_env()
+sts = boto3.client('sts')
+
+# environment variables from os.environ to pass on to bootstrap container
+environment_whitelist = [
+    'AWS_EXECUTION_ENV',
+    'AWS_REGION',
+    'BASH_ENV',
+    'REGISTRY_HOST',
+]
+
 
 def self_container_id():
     with open('/proc/self/cgroup', 'r') as f:
@@ -53,34 +61,27 @@ def docker_image():
     return docker_client.images.pull(repo, tag)
 
 
-def build_environment():
+def build_environment(environ):
     def unescape_value(value):
         '''
-        values in this file are encoded via Golang fmt.Sprintf('%q'), so they
-        are wrapped with " and any " within are backslash-escaped
+        values in the env file are encoded via Golang fmt.Sprintf('%q'), so they
+        are wrapped with ", and any " within are backslash-escaped
         '''
         return value.strip('"').replace('\\"', '"')
 
-    # environment variables from os.environ to pass on to bootstrap container
-    whitelist = [
-        'AWS_DEFAULT_REGION',
-        'AWS_EXECUTION_ENV',
-        'AWS_REGION',
-        'BASH_ENV',
-        'REGISTRY_HOST',
-    ]
-
     # Copy all BUILDKITE_* vars
-    env = {var: os.environ[var] for var in os.environ
-           if var.startswith('BUILDKITE_')}
+    env = {var: environ[var] for var in environ if var.startswith('BUILDKITE_')}
 
     # additional vars specified in the whitelist
-    for var in whitelist:
-        if var in os.environ:
-            env[var] = os.environ[var]
+    for var in environment_whitelist:
+        if var in environ:
+            env[var] = environ[var]
+
+    if 'AWS_REGION' in env:
+        env['AWS_DEFAULT_REGION'] = env['AWS_REGION']
 
     # job vars from the env file
-    env_file = os.environ.get('BUILDKITE_ENV_FILE', None)
+    env_file = env.get('BUILDKITE_ENV_FILE', None)
     if env_file:
         with open(env_file, 'r') as f:
             for line in f.readlines():
@@ -93,10 +94,12 @@ def build_environment():
 
 
 def provision_aws_access(build_env):
+    # TODO: only do this once per build, save the artifact to meta-data and check there first
     print('~~~ Provision AWS access via Mastermind')
-    access_document = {}
+    access_document = None
     max_attempts = 4
     for attempt in range(max_attempts):
+        # TODO: from retrying import retry <-- clean up this retry logic
         try:
             access_document = mastermind.get_access_document(build_env)
             break
@@ -110,23 +113,38 @@ def provision_aws_access(build_env):
         if attempt != max_attempts:
             print_warn(f'Will retry. Retries remaining: {max_attempts-attempt}')
             time.sleep(4**(attempt))
-    if access_document == {}:
+    if access_document is None:
         print_warn("Failed to retrieve Mastermind access document, providing only default permissions.")
 
     for attempt in range(max_attempts):
         try:
             resp = mastermind.request_access(access_document)
             break
-        except Exception as e:
-            print_warn(f'WARN: Error while provisioning access: {e}')
+        except HTTPError as e:
+            print_warn(f'ERROR: Received HTTP {e.code} while attempting to retrieve Mastermind access document from {e.url}.')
             if attempt == max_attempts:
                 raise(e)
+        except Exception as e:
+            print_warn(f'ERROR: Error while provisioning access:')
+            raise(e)
         print_warn(f'Will retry. Retries remaining: {max_attempts-attempt}')
         time.sleep(4**(attempt))
 
-    # build_env['AWS_ACCESS_KEY_ID'] = resp.access_key
-    # build_env['AWS_SECRET_ACCESS_KEY'] = resp.secret_key
-    # build_env['AWS_SESSION_TOKEN'] = resp.session_token
+    role_arn = resp['arn']
+    build_id = build_env['BUILDKITE_BUILD_ID']
+
+    assume_role_response = sts.assume_role(RoleArn=role_arn, RoleSessionName=f'buildkite@build-{build_id}')
+
+    build_env['MASTERMIND_ACCESS_KEY_ID'] = assume_role_response['Credentials']['AccessKeyId']
+    build_env['MASTERMIND_SECRET_ACCESS_KEY'] = assume_role_response['Credentials']['SecretAccessKey']
+    build_env['MASTERMIND_SESSION_TOKEN'] = assume_role_response['Credentials']['SessionToken']
+
+    mastermind_bucket = os.environ['MASTERMIND_CONFIGS_BUCKET']
+    build_env['MASTERMIND_AWS_CONFIG_FILE_URL'] = '/'.join([f's3://{mastermind_bucket}', 'aws_configs',
+                                                 'buildkite', build_env["BUILDKITE_PIPELINE_SLUG"],
+                                                 'build', 'config'])
+
+    return build_env
 
 
 def build_container_config():
@@ -135,8 +153,7 @@ def build_container_config():
     job_label = os.environ.get('BUILDKITE_LABEL', '')
     project_slug = os.environ.get('BUILDKITE_PROJECT_SLUG', '')
     image = docker_image()
-    build_env = build_environment()
-    provision_aws_access(build_env)
+    build_env = provision_aws_access(build_environment(os.environ))
     datadog_logs_config = {
         'buildkite.bootstrap.docker_image': image.id,
         'buildkite.build-id': build_id,

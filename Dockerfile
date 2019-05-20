@@ -68,14 +68,15 @@ VOLUME /buildkite/plugins
 RUN ln -v /usr/bin/buildkite-agent /buildkite/bin/buildkite-agent
 VOLUME /buildkite/bin
 
+COPY pylib/requirements.txt /opt/python-src/requirements.txt
+RUN cd /opt/python-src && pip3 install -r requirements.txt
+
+COPY pylib/ /opt/python-src/
+RUN pip3 install -e /opt/python-src/
+
 COPY docker-config.json /root/.docker/config.json
 COPY entrypoint.sh /buildkite-entrypoint.sh
 COPY ./buildkite/ /buildkite
-
-COPY pylib/requirements.txt /opt/python-src/requirements.txt
-RUN cd /opt/python-src && pip3 install -r requirements.txt
-COPY pylib/ /opt/python-src/
-RUN pip3 install -e /opt/python-src/
 
 # Grab the /buildkite dir and its contents as a volume
 # VOLUME /buildkite
