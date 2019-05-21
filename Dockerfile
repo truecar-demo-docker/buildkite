@@ -59,6 +59,7 @@ RUN mkdir -pv \
 ENV BUILDKITE_BUILD_PATH /buildkite/builds
 ENV BUILDKITE_HOOKS_PATH /buildkite/hooks
 ENV BUILDKITE_PLUGINS_PATH /buildkite/plugins
+ENV BUILDKITE_RESOURCES_PATH /buildkite/resources
 
 # For each container, these start out empty unless a host path is mounted
 VOLUME /buildkite/builds
@@ -81,7 +82,7 @@ COPY ./buildkite/ /buildkite
 # Grab the /buildkite dir and its contents as a volume
 # VOLUME /buildkite
 
-ENV BASH_ENV /buildkite/resources/bash_env
+ENV BASH_ENV $BUILDKITE_RESOURCES_PATH/bash_env
 # dont use config file:
 ENV BUILDKITE_AGENT_CONFIG=''
 ENV BUILDKITE_BOOTSTRAP_SCRIPT_PATH /buildkite/bootstrap-via-docker

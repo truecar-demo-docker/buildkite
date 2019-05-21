@@ -1,19 +1,25 @@
 import os
 import time
+from datetime import timedelta
 from os.path import basename
 import json
 from urllib.error import HTTPError
 from urllib.parse import urljoin
+from pathlib import Path
 
 import boto3
 import docker
 from docker.types import LogConfig
+from jinja2 import Template
+import requests
 
-from buildkite.util import print_warn
+from buildkite.util import print_warn, print_debug
 import buildkite.mastermind as mastermind
 
 docker_client = docker.from_env()
 sts = boto3.client('sts')
+
+maven_settings_template_path = Path(os.environ['BUILDKITE_RESOURCES_PATH']).joinpath('maven/settings.xml.j2')
 
 # environment variables from os.environ to pass on to bootstrap container
 environment_whitelist = [
@@ -142,8 +148,8 @@ def provision_aws_access(build_env):
 
     mastermind_bucket = os.environ['MASTERMIND_CONFIGS_BUCKET']
     build_env['MASTERMIND_AWS_CONFIG_FILE_URL'] = '/'.join([f's3://{mastermind_bucket}', 'aws_configs',
-                                                 'buildkite', build_env["BUILDKITE_PIPELINE_SLUG"],
-                                                 'build', 'config'])
+                                                            'buildkite', build_env["BUILDKITE_PIPELINE_SLUG"],
+                                                            'build', 'config'])
 
     # disable access to the ECS task role which may have been passed from the agent
     del build_env['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI']
@@ -171,6 +177,12 @@ def build_container_config():
         'source': 'buildkite-agent',
     }
     volumes = {}
+    # if is_maven_agent():
+    #     vol_name, _ = maven_docker_mount()
+    #     volumes[vol_name]: {
+    #         'bind': '/root/.m2'
+    #     }
+
     config = {
         'image': image.id,
         'entrypoint': '/buildkite-entrypoint.sh',
@@ -200,3 +212,23 @@ def build_container_config():
 
 def create_container(config):
     return docker_client.containers.create(**config)
+
+
+def is_maven_agent():
+    return os.environ['BUILDKITE_AGENT_META_DATA_QUEUE'] == 'maven'
+
+
+def maven_docker_mount():
+    vol_name, mount_path = os.environ['MAVEN_DOCKER_MOUNT'].split(':')
+    return vol_name, Path(mount_path)
+
+
+def provision_maven_settings():
+    artifactory_api_key = os.environ['ARTIFACTORY_API_KEY']
+    volume_name, mount_path = maven_docker_mount()
+    settings_path = mount_path.joinpath('settings.xml')
+    template = Template(maven_settings_template_path.read_text(encoding='utf-8'))
+    settings_xml = template.render(username='buildkite-agent', password=artifactory_api_key)
+    print({'settings.xml': settings_xml})
+    with open(settings_path, 'w') as f:
+        print(settings_xml, file=f)
