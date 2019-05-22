@@ -3,7 +3,6 @@
 # by the bootstrap
 
 import os
-import sys
 import re
 import subprocess
 
@@ -22,8 +21,7 @@ metadata_param_pattern = re.compile('^buildkite-meta-data:(.+)$')
 
 
 def warn(str):
-    print("^^^ +++", file=sys.stderr) # tell buildkite to expand this section in the log output, to reveal this warning
-    print(f'\x1b[31m{str}\x1b[0m', file=sys.stderr)
+    print_warn(f'\x1b[31m{str}\x1b[0m')
 
 
 def buildkite_metadata_get(var, key):
@@ -31,8 +29,7 @@ def buildkite_metadata_get(var, key):
         command = ['buildkite-agent', 'meta-data', 'get', key]
         return subprocess.check_output(command).decode().rstrip('\n')
     except subprocess.CalledProcessError as e:
-        warn(f'ERROR while attempting to resolve ${var} using buildkite '
-             f'meta-data {key}: exit={e.returncode}')
+        warn(f'ERROR while attempting to resolve ${var} using buildkite meta-data {key}: exit={e.returncode}')
 
 
 def resolve_ssm_var(var, param_path):
@@ -40,14 +37,11 @@ def resolve_ssm_var(var, param_path):
         resp = ssm.get_parameter(Name=param_path, WithDecryption=True)
         return resp['Parameter']['Value']
     except ssm.exceptions.ParameterNotFound:
-        warn(f'ERROR while resolving var {var} using SSM parameter {key}: '
-             'ParameterNotFound')
+        warn(f'ERROR while resolving var {var} using SSM parameter {param_path}: ParameterNotFound')
     except ParamValidationError as e:
-        warn("ERROR boto3.ParamValidationError while resolving var {var} "
-             f"using SSM parameter {key}: {e}")
+        warn(f"ERROR boto3.ParamValidationError while resolving var {var} using SSM parameter {param_path}: {e}")
     except ClientError as e:
-        warn(f'ERROR boto3.ClientError while resolving var {var} using SSM '
-             f'parameter {key}: {e}')
+        warn(f'ERROR boto3.ClientError while resolving var {var} using SSM parameter {param_path}: {e}')
 
 
 def export_var(var, value):
