@@ -20,6 +20,8 @@ steps:
     plugins:
       - docker-compose#v3.0.3:
           run: agent
+          volumes:
+            - maven-repo:/mnt/maven
 
   - wait
 
