@@ -1,4 +1,5 @@
 import os
+import sys
 
 
 def print_debug(msg):
@@ -7,9 +8,9 @@ def print_debug(msg):
 
 
 def print_warn(msg):
-    print(msg)
+    print(msg, file=sys.stderr)
     # expand this section
-    print(f'^^^ +++')
+    print(f'^^^ +++', file=sys.stderr)
 
 
 def enable_http_debug_logging():
