@@ -3,7 +3,7 @@ volumes:
   maven-repo:
     external: true
 services:
-  agent:
+  agent: &agent
     environment:
       - BUILDKITE_BUILD_PATH=/var/run/buildkite/builds
       - BUILDKITE_PLUGINS_PATH=/var/run/buildkite/plugins
@@ -19,16 +19,4 @@ services:
       - /var/run/buildkite/builds:/var/run/buildkite/builds
 
   agent-maven:
-    environment:
-      - BUILDKITE_BUILD_PATH=/var/run/buildkite/builds
-      - BUILDKITE_PLUGINS_PATH=/var/run/buildkite/plugins
-    env_file:
-      - .env
-    volumes:
-      - ./pylib:/opt/python-src
-      - ./entrypoint.sh:/buildkite-entrypoint.sh
-      - ./buildkite/bootstrap-via-docker:/buildkite/bootstrap-via-docker
-      - ./buildkite/resources:/buildkite/resources
-      - ./buildkite/hooks:/buildkite/hooks
-      - /var/run/buildkite/plugins:/var/run/buildkite/plugins
-      - /var/run/buildkite/builds:/var/run/buildkite/builds
+    <<: *agent
