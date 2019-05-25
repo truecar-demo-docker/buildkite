@@ -10,18 +10,7 @@ import requests
 import boto3
 
 from buildkite.util import print_debug
-
-
-class AccessDocumentFormatError(Exception):
-    pass
-
-
-class UnsupportedCloneURL(Exception):
-    pass
-
-
-class TimeoutError(Exception):
-    pass
+from buildkite.errors import UnsupportedCloneURL, AccessDocumentFormatError
 
 
 env_var_placeholder_pattern = re.compile('@@([a-zA-Z0-9_]+)@@')
@@ -55,7 +44,7 @@ def role_request(access_document):
     aws_account_id = os.environ['AWS_ACCOUNT_ID']
     caller_identity = sts.get_caller_identity()
 
-    print_debug({ 'caller_identity': caller_identity })
+    print_debug({'caller_identity': caller_identity})
 
     default_permissions = [
         {
