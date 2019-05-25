@@ -18,8 +18,6 @@ services:
     volumes:
       - ./test/:/test
       - plugins:/buildkite/plugins
-      - /buildkite/bin:/buildkite/bin
-      - /buildkite/builds:/buildkite/builds
       - '/var/run/docker.sock:/var/run/docker.sock'
 
   agent-maven:
@@ -32,6 +30,4 @@ services:
       - ./test/:/test
       - maven-repo:/mnt/maven-repo
       - plugins:/buildkite/plugins
-      - /buildkite/bin:/buildkite/bin
-      - /buildkite/builds:/buildkite/builds
       - '/var/run/docker.sock:/var/run/docker.sock'
