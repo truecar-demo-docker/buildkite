@@ -26,6 +26,9 @@ environment_whitelist = [
     'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI',
     'AWS_EXECUTION_ENV',
     'AWS_REGION',
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_SESSION_TOKEN',
     'BASH_ENV',
     'REGISTRY_HOST',
 ]
@@ -151,8 +154,11 @@ def provision_aws_access(build_env):
                                                             'buildkite', build_env["BUILDKITE_PIPELINE_SLUG"],
                                                             'build', 'config'])
 
-    # disable access to the ECS task role which may have been passed from the agent
+    # disable access to other AWS credentials now that Mastermind has successfully provided credentials
     del build_env['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI']
+    del build_env['AWS_ACCESS_KEY_ID']
+    del build_env['AWS_SECRET_ACCESS_KEY']
+    del build_env['AWS_SESSION_TOKEN']
 
     return build_env
 
