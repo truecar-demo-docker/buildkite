@@ -48,6 +48,10 @@ def self_container():
     return docker_client.containers.get(self_container_id())
 
 
+def entrypoint():
+    return self_container().attrs.get('Config', {})['Entrypoint']
+
+
 def cgroup_parent():
     return self_container().attrs.get('HostConfig', {}).get('CgroupParent')
 
@@ -191,7 +195,7 @@ def build_container_config():
 
     config = {
         'image': image.id,
-        'entrypoint': '/buildkite-entrypoint.sh',
+        'entrypoint': entrypoint(),
         'command': ['buildkite-agent', 'bootstrap'],
         'name': f'buildkite-build-{build_id}-bootstrap-{job_id}',
         'labels': {

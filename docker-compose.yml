@@ -1,29 +1,37 @@
 version: '3.7'
+
 volumes:
-  maven-repo: {}
+  maven-repo:
+    name: maven-repo
+  plugins: {}
+
 services:
   agent: &agent
     build: .
     image: truecar/buildkite
     init: true
-    stop_signal: INT
     environment:
       - BUILDKITE_AGENT_TAGS=environment=local,queue=agent-dev
       - AWS_REGION=us-west-2
       - AWS_DEFAULT_REGION=us-west-2
       - AWS_ACCOUNT_ID=221344006312
     volumes:
-      - '/var/run/docker.sock:/var/run/docker.sock'
       - ./test/:/test
+      - plugins:/buildkite/plugins
+      - /buildkite/bin:/buildkite/bin
+      - /buildkite/builds:/buildkite/builds
+      - '/var/run/docker.sock:/var/run/docker.sock'
 
   agent-maven:
     image: truecar/buildkite
     init: true
-    stop_signal: INT
     environment:
       - BUILDKITE_AGENT_TAGS=environment=local,queue=maven
       - MAVEN_DOCKER_MOUNT=maven-repo:/mnt/maven-repo
     volumes:
-      - '/var/run/docker.sock:/var/run/docker.sock'
-      - maven-repo:/mnt/maven-repo
       - ./test/:/test
+      - maven-repo:/mnt/maven-repo
+      - plugins:/buildkite/plugins
+      - /buildkite/bin:/buildkite/bin
+      - /buildkite/builds:/buildkite/builds
+      - '/var/run/docker.sock:/var/run/docker.sock'

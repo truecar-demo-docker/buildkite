@@ -32,11 +32,15 @@ RUN set -x \
   && curl -fsSL https://raw.githubusercontent.com/stedolan/jq/master/sig/v${JQ_VERSION}/jq-linux64.asc | gpg --verify - /usr/local/bin/jq \
   && chmod +x /usr/local/bin/jq
 
+# https://github.com/awslabs/amazon-ecr-credential-helper/releases
 ARG ECR_HELPER_VERSION=0.3.0
+
 RUN curl -fsSL https://s3-us-west-2.amazonaws.com/tc-build-binaries/docker-credential-ecr-login-v${ECR_HELPER_VERSION}-linux-x64.bin -o /usr/local/bin/docker-credential-ecr-login \
   && chmod +x /usr/local/bin/docker-credential-ecr-login
 
-ARG BUILDKITE_AGENT_VERSION="3.11.*"
+# https://github.com/buildkite/agent/releases
+ARG BUILDKITE_AGENT_VERSION="3.12.*"
+
 RUN set -x \
  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32A37959C2FA5C3C99EFBC32A79206696452D198 \
  && add-apt-repository "deb https://apt.buildkite.com/buildkite-agent stable main" \
@@ -50,42 +54,48 @@ RUN set -x \
   && apt-get install -y git-lfs \
   && git lfs install
 
+# user buildkite-agent was created by apt package buildkite-agent
+RUN mkdir -v /buildkite \
+  && chown buildkite-agent /buildkite \
+  # FIXME ideally we have a `docker` group
+  && usermod -aG root buildkite-agent
+USER buildkite-agent
+# this is the $HOME
+WORKDIR /var/lib/buildkite-agent
+
 RUN mkdir -pv \
       /buildkite/builds \
       /buildkite/hooks \
       /buildkite/plugins \
       /buildkite/bin
 
-ENV BUILDKITE_BUILD_PATH /buildkite/builds
-ENV BUILDKITE_HOOKS_PATH /buildkite/hooks
-ENV BUILDKITE_PLUGINS_PATH /buildkite/plugins
-ENV BUILDKITE_RESOURCES_PATH /buildkite/resources
+ENV BUILDKITE_BUILD_PATH=/buildkite/builds \
+    BUILDKITE_HOOKS_PATH=/buildkite/hooks \
+    BUILDKITE_PLUGINS_PATH=/buildkite/plugins \
+    BUILDKITE_RESOURCES_PATH=/buildkite/resources
 
 # For each container, these start out empty unless a host path is mounted
 VOLUME /buildkite/builds
 VOLUME /buildkite/plugins
 
 # make the binary available in a volume for sharing with bootstrap containers
-RUN ln -v /usr/bin/buildkite-agent /buildkite/bin/buildkite-agent
+RUN cp /usr/bin/buildkite-agent /buildkite/bin/buildkite-agent
 VOLUME /buildkite/bin
 
-COPY pylib/requirements.txt /opt/python-src/requirements.txt
-RUN cd /opt/python-src && pip3 install -r requirements.txt
+COPY --chown=999:999 pylib/requirements.txt ./pylib/
+RUN cd ./pylib/ && pip3 install -r requirements.txt
 
-COPY pylib/ /opt/python-src/
-RUN pip3 install -e /opt/python-src/
+COPY --chown=999:999 pylib/ ./pylib/
+ENV PYTHONPATH "${PYTHONPATH}:/var/lib/buildkite-agent/pylib"
 
-COPY docker-config.json /root/.docker/config.json
-COPY entrypoint.sh /buildkite-entrypoint.sh
-COPY ./buildkite/ /buildkite
+COPY --chown=999:999 docker-config.json ./.docker/config.json
+COPY --chown=999:999 ./buildkite/ /buildkite
 
-# Grab the /buildkite dir and its contents as a volume
-# VOLUME /buildkite
+ENV BASH_ENV=$BUILDKITE_RESOURCES_PATH/bash_env \
+    BUILDKITE_BOOTSTRAP_SCRIPT_PATH=/buildkite/bootstrap.sh \
+    # Use no config file, we'll config Buildkite exclusively via ENV
+    BUILDKITE_AGENT_CONFIG=''
 
-ENV BASH_ENV $BUILDKITE_RESOURCES_PATH/bash_env
-# dont use config file:
-ENV BUILDKITE_AGENT_CONFIG=''
-ENV BUILDKITE_BOOTSTRAP_SCRIPT_PATH /buildkite/bootstrap-via-docker
-
-ENTRYPOINT ["/buildkite-entrypoint.sh"]
+STOPSIGNAL SIGINT
+ENTRYPOINT ["/buildkite/entrypoint.sh"]
 CMD ["/buildkite/bin/buildkite-agent", "start"]

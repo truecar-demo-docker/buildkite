@@ -2,3 +2,5 @@
 __pycache__/
 docker-compose.override.yml
 .env
+buildkite/builds
+buildkite/plugins
