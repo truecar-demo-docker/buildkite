@@ -51,7 +51,21 @@ function configure_docker() {
     local conf_path="$HOME/.docker/config.json"
     local conf='{}'
     [[ -f ${conf_path} ]] && conf="$(< "$conf_path")"
-    echo "${conf}" | jq --arg host "${REGISTRY_HOST}" '. + { credHelpers: ((.credHelpers // {}) + { ($host): "ecr-login" }) } | if .credsStore == "ecr-login" then del(.credsStore) else . end' > "${conf_path}"
+    echo "${conf}" | \
+        jq --arg ecr_host "${REGISTRY_HOST}" \
+           --arg artifactory_password "${ARTIFACTORY_API_KEY}" \
+           --arg artifactory_user "${ARTIFACTORY_API_USER}" \
+           --arg artifactory_host "${REGISTRY_HOST_ARTIFACTORY}" \
+        '. + {
+            credHelpers: ((.credHelpers // {}) + {
+                ($ecr_host): "ecr-login",
+            }),
+            auths: ((.auths // {}) + {
+                ($artifactory_host): {
+                    auth: ("\($artifactory_user):\($artifactory_password)" | @base64)
+                },
+            }),
+        } | if .credsStore == "ecr-login" then del(.credsStore) else . end' > "${conf_path}"
 }
 
 configure_environment
