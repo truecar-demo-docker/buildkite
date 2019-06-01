@@ -31,6 +31,10 @@ environment_whitelist = [
     'AWS_SESSION_TOKEN',
     'BASH_ENV',
     'REGISTRY_HOST',
+    'REGISTRY_HOST_ECR',
+    'REGISTRY_HOST_ARTIFACTORY',
+    'ARTIFACTORY_API_KEY',
+    'ARTIFACTORY_API_USER',
 ]
 
 
@@ -235,10 +239,11 @@ def maven_docker_mount():
 
 def provision_maven_settings():
     artifactory_api_key = os.environ['ARTIFACTORY_API_KEY']
+    artifactory_api_key = os.environ['ARTIFACTORY_API_USER']
     volume_name, mount_path = maven_docker_mount()
     settings_path = mount_path.joinpath('settings.xml')
     template = Template(maven_settings_template_path.read_text(encoding='utf-8'))
-    settings_xml = template.render(username='buildkite-agent', password=artifactory_api_key)
+    settings_xml = template.render(username=artifactory_api_username, password=artifactory_api_key)
     print({'settings.xml': settings_xml})
     with open(settings_path, 'w') as f:
         print(settings_xml, file=f)
