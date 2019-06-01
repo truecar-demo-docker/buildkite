@@ -239,11 +239,11 @@ def maven_docker_mount():
 
 def provision_maven_settings():
     artifactory_api_key = os.environ['ARTIFACTORY_API_KEY']
-    artifactory_api_key = os.environ['ARTIFACTORY_API_USER']
+    artifactory_api_user = os.environ['ARTIFACTORY_API_USER']
     volume_name, mount_path = maven_docker_mount()
     settings_path = mount_path.joinpath('settings.xml')
     template = Template(maven_settings_template_path.read_text(encoding='utf-8'))
-    settings_xml = template.render(username=artifactory_api_username, password=artifactory_api_key)
+    settings_xml = template.render(username=artifactory_api_user, password=artifactory_api_key)
     print({'settings.xml': settings_xml})
     with open(settings_path, 'w') as f:
         print(settings_xml, file=f)
