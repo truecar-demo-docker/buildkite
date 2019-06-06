@@ -82,6 +82,6 @@ setup_ssh_key() {
 configure_environment
 configure_docker
 copy_binary
-setup_ssh_key
+setup_ssh_key || :
 
 exec "$@"
