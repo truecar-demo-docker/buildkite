@@ -8,7 +8,9 @@ function copy_binary() {
     # builds to share with their constituent containers. because it's a host volume,
     # it may end up empty or containing an old binary, so copy our binary to it in
     # that case. # FIXME: this doesn't seem terribly robust, but it works for now.
-    local binary_path="$(which buildkite-agent)"
+    local binary_path
+    binary_path="$(command -v buildkite-agent)"
+
     [[ -x /buildkite/bin/buildkite-agent ]] && diff -q "$binary_path" /buildkite/bin/buildkite-agent && return 0
     cp -v "$binary_path" /buildkite/bin/
 }
@@ -35,10 +37,11 @@ function configure_environment() {
 
     [[ ${EC2_PRIVATE_IP:-} ]] && agent_tags+=( "ip_address=${EC2_PRIVATE_IP}" )
 
-    local this_image_id="$(docker inspect "$(container_id)" | jq -r '.[0].Image')"
+    local this_image_id
+    this_image_id="$(docker inspect "$(container_id)" | jq -r '.[0].Image')"
     [[ ${this_image_id:-} ]] && agent_tags+=( "agent_docker_image=${this_image_id}" )
 
-    for tag in ${agent_tags[@]}; do
+    for tag in "${agent_tags[@]}"; do
         export BUILDKITE_AGENT_TAGS="${BUILDKITE_AGENT_TAGS+${BUILDKITE_AGENT_TAGS},}${tag}"
     done
 }
@@ -68,7 +71,17 @@ function configure_docker() {
         } | if .credsStore == "ecr-login" then del(.credsStore) else . end' > "${conf_path}"
 }
 
+setup_ssh_key() {
+    local key
+    key="$(aws ssm get-parameter --name '/buildkite/ssh-private-key' --with-decryption | jq -e -r '.Parameter.Value')"
+    mkdir -p ~/.ssh
+    echo "${key}" > ~/.ssh/id_rsa
+    chmod 0600 ~/.ssh/id_rsa
+}
+
 configure_environment
 configure_docker
 copy_binary
+setup_ssh_key
+
 exec "$@"
