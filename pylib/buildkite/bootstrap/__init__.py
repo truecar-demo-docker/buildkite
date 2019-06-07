@@ -108,6 +108,8 @@ def build_environment(environ):
                 env[var] = value
         # since the file isn't available to the bootstrap container, unset this var
         del env['BUILDKITE_ENV_FILE']
+
+    env['BUILDKITE_BUILD_CHECKOUT_PATH'] = os.path.join(env['BUILDKITE_BUILD_PATH'], env['BUILDKITE_JOB_ID'])
     return env
 
 
