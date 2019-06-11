@@ -23,18 +23,21 @@ maven_settings_template_path = Path(os.environ['BUILDKITE_RESOURCES_PATH']).join
 
 # environment variables from os.environ to pass on to bootstrap container
 environment_whitelist = [
-    'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI',
     'AWS_EXECUTION_ENV',
     'AWS_REGION',
-    'AWS_ACCESS_KEY_ID',
-    'AWS_SECRET_ACCESS_KEY',
-    'AWS_SESSION_TOKEN',
     'BASH_ENV',
     'REGISTRY_HOST',
     'REGISTRY_HOST_ECR',
     'REGISTRY_HOST_ARTIFACTORY',
     'ARTIFACTORY_API_KEY',
     'ARTIFACTORY_API_USER',
+]
+
+aws_env_vars = [
+    'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI',
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_SESSION_TOKEN',
 ]
 
 
@@ -114,6 +117,20 @@ def build_environment(environ):
 
 
 def provision_aws_access(build_env):
+    if os.environ.get('BUILDKITE_USE_MASTERMIND', 'false') == 'true':
+        return provision_aws_access_via_mastermind(build_env)
+    else:
+        return passthru_aws_env(build_env)
+
+
+def passthru_aws_env(build_env):
+    for var in aws_env_vars:
+        if var in os.environ:
+            build_env[var] = os.environ[var]
+    return build_env
+
+
+def provision_aws_access_via_mastermind(build_env):
     # TODO: only do this once per build, save the artifact to meta-data and check there first
     print('~~~ Provision AWS access via Mastermind')
     access_document = None
@@ -163,21 +180,11 @@ def provision_aws_access(build_env):
     build_env['MASTERMIND_AWS_CONFIG_FILE_URL'] = '/'.join([f's3://{mastermind_bucket}', 'aws_configs',
                                                             'buildkite', build_env["BUILDKITE_PIPELINE_SLUG"],
                                                             'build', 'config'])
-
-    # disable access to other AWS credentials now that Mastermind has successfully provided credentials
-    del build_env['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI']
-    del build_env['AWS_ACCESS_KEY_ID']
-    del build_env['AWS_SECRET_ACCESS_KEY']
-    del build_env['AWS_SESSION_TOKEN']
-
     return build_env
 
 
 def build_container_config():
-    build_env = build_environment(os.environ)
-    if os.environ.get('BUILDKITE_USE_MASTERMIND', 'false') == 'true':
-        build_env = provision_aws_access(build_env)
-
+    build_env = provision_aws_access(build_environment(os.environ))
     job_id = os.environ['BUILDKITE_JOB_ID']
     build_id = os.environ['BUILDKITE_BUILD_ID']
     job_label = os.environ.get('BUILDKITE_LABEL', '')
