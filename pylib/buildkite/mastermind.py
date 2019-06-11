@@ -112,7 +112,7 @@ def role_request(access_document):
         resources = resources + access_document.get('common', {}).get('resources', [])
 
     return {
-        'project_identifier': f'buildkite/{slug}',
+        'project_identifier': f'buildkite:{slug}',
         'environment': 'build',
         'principal': {
             'type': 'AWS',
