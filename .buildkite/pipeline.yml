@@ -22,6 +22,9 @@ steps:
           run: agent
           volumes:
             - maven-repo:/mnt/maven
+          environment:
+            ARTIFACTORY_API_KEY: foo
+            ARTIFACTORY_API_USER: buildkite
 
   - wait
 
