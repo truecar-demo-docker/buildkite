@@ -25,7 +25,7 @@ def request_access(build_env, access_document):
         return value is None
 
     @retry(retry_on_result=value_is_none,
-           stop_max_delay=timedelta(minutes=10).total_seconds(),
+           stop_max_delay=timedelta(minutes=10) / timedelta(milliseconds=1),
            wait_random_min=1000,
            wait_random_max=5000)
     def make_request():
