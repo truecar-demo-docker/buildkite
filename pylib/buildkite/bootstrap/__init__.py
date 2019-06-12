@@ -1,19 +1,13 @@
 import os
-import time
-from datetime import timedelta
 from os.path import basename
 import json
-from urllib.error import HTTPError
-from urllib.parse import urljoin
 from pathlib import Path
 
 import boto3
 import docker
 from docker.types import LogConfig
 from jinja2 import Template
-import requests
 
-from buildkite.util import print_warn, print_debug
 import buildkite.mastermind as mastermind
 
 docker_client = docker.from_env()
@@ -118,7 +112,7 @@ def build_environment(environ):
 
 def provision_aws_access(build_env):
     if os.environ.get('BUILDKITE_USE_MASTERMIND', 'false') == 'true':
-        return provision_aws_access_via_mastermind(build_env)
+        return mastermind.provision_aws_access_environ(build_env)
     else:
         return passthru_aws_env(build_env)
 
@@ -127,59 +121,6 @@ def passthru_aws_env(build_env):
     for var in aws_env_vars:
         if var in os.environ:
             build_env[var] = os.environ[var]
-    return build_env
-
-
-def provision_aws_access_via_mastermind(build_env):
-    # TODO: only do this once per build, save the artifact to meta-data and check there first
-    print('~~~ Provision AWS access via Mastermind')
-    access_document = None
-    max_attempts = 4
-    for attempt in range(max_attempts):
-        # TODO: from retrying import retry <-- clean up this retry logic
-        try:
-            access_document = mastermind.get_access_document(build_env)
-            break
-        except HTTPError as e:
-            print_warn(f'ERROR: Received HTTP {e.code} while attempting to retrieve Mastermind access document from {e.url}.')
-            if e.code == 404:
-                break # no retry for 404s; avoid a long delay for Mastermind-unaware projects
-        except Exception as e:
-            print_warn(f'ERROR: {e}')
-            break # no retry
-        if attempt != max_attempts:
-            print_warn(f'Will retry. Retries remaining: {max_attempts-attempt}')
-            time.sleep(4**(attempt))
-    if access_document is None:
-        print_warn("Failed to retrieve Mastermind access document, providing only default permissions.")
-
-    for attempt in range(max_attempts):
-        try:
-            resp = mastermind.request_access(access_document)
-            break
-        except HTTPError as e:
-            print_warn(f'ERROR: Received HTTP {e.code} while attempting to retrieve Mastermind access document from {e.url}.')
-            if attempt == max_attempts:
-                raise(e)
-        except Exception as e:
-            print_warn(f'ERROR: Error while provisioning access:')
-            raise(e)
-        print_warn(f'Will retry. Retries remaining: {max_attempts-attempt}')
-        time.sleep(4**(attempt))
-
-    role_arn = resp['arn']
-    build_id = build_env['BUILDKITE_BUILD_ID']
-
-    assume_role_response = sts.assume_role(RoleArn=role_arn, RoleSessionName=f'buildkite@build-{build_id}')
-
-    build_env['MASTERMIND_ACCESS_KEY_ID'] = assume_role_response['Credentials']['AccessKeyId']
-    build_env['MASTERMIND_SECRET_ACCESS_KEY'] = assume_role_response['Credentials']['SecretAccessKey']
-    build_env['MASTERMIND_SESSION_TOKEN'] = assume_role_response['Credentials']['SessionToken']
-
-    mastermind_bucket = os.environ['MASTERMIND_CONFIGS_BUCKET']
-    build_env['MASTERMIND_AWS_CONFIG_FILE_URL'] = '/'.join([f's3://{mastermind_bucket}', 'aws_configs',
-                                                            'buildkite', build_env["BUILDKITE_PIPELINE_SLUG"],
-                                                            'build', 'config'])
     return build_env
 
 

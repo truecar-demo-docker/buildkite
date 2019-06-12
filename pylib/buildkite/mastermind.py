@@ -4,13 +4,16 @@ import re
 from datetime import datetime, timedelta
 from time import sleep
 from urllib.request import urlopen
-from urllib.parse import urlsplit, urlunsplit, urljoin
+from urllib.parse import urlsplit, urljoin
+from urllib.error import HTTPError
 
 import requests
 import boto3
+from botocore.exceptions import ClientError
+from retrying import retry, RetryError
 
-from buildkite.util import print_debug
-from buildkite.errors import UnsupportedCloneURL, AccessDocumentFormatError
+from buildkite.util import print_debug, print_warn, github_raw_url_from_clone_url
+from buildkite.errors import AccessDocumentFormatError
 
 
 env_var_placeholder_pattern = re.compile('@@([a-zA-Z0-9_]+)@@')
@@ -30,7 +33,8 @@ def request_access(access_document):
             now = datetime.now()
             if now > deadline:
                 raise TimeoutError('Timeout while waiting for Mastermind approval. Recommend retrying this job.')
-            print(f'Waiting {(deadline - now).total_seconds()}s longer for approval...')
+            seconds_left = round((deadline - now).total_seconds())
+            print(f'Waiting {seconds_left}s longer for approval...')
             sleep(10)
         else:
             print(f'Error {resp.status_code} from Mastermind while requesting role')
@@ -38,11 +42,11 @@ def request_access(access_document):
             resp.raise_for_status()
 
 
-def role_request(access_document):
-    slug = os.environ["BUILDKITE_PIPELINE_SLUG"]
+def role_request(build_env, access_document):
     aws_region = os.environ['AWS_REGION']
     aws_account_id = os.environ['AWS_ACCOUNT_ID']
     caller_identity = sts.get_caller_identity()
+    buildkite_pipeline_slug = build_env['BUILDKITE_PIPELINE_SLUG']
 
     print_debug({'caller_identity': caller_identity})
 
@@ -50,7 +54,7 @@ def role_request(access_document):
         {
             'arns': [
                 f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/build/common/*',
-                f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/build/{slug}/*',
+                f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/build/{buildkite_pipeline_slug}/*',
             ],
             'actions': [
                 'ssm:getparameter',
@@ -112,7 +116,7 @@ def role_request(access_document):
         resources = resources + access_document.get('common', {}).get('resources', [])
 
     return {
-        'project_identifier': f'buildkite:{slug}',
+        'project_identifier': project_identifier(build_env),
         'environment': 'build',
         'principal': {
             'type': 'AWS',
@@ -122,26 +126,6 @@ def role_request(access_document):
             'resources': resources,
         },
     }
-
-
-def github_raw_url_from_clone_url(clone_url, ref, path):
-    url = urlsplit(clone_url)
-    if not url.scheme == 'https':
-        raise UnsupportedCloneURL("only https clone URLs are supported")
-    if url.path.endswith('.git'):
-        url = url._replace(path=url.path[0:-4])
-    if url.netloc == 'git.corp.tc':
-        url = url._replace(netloc='raw.git.corp.tc',
-                           path=f'{url.path}/{ref}/{path}')
-    elif url.netloc == 'github.com':
-        url = url._replace(netloc='raw.github.com',
-                           path=f'{url.path}/{ref}/{path}')
-    else:
-        raise UnsupportedCloneURL(f"don't know how to retrieve raw files from git repo on domain {url.netloc}")
-        # FIXME: maybe should just move code checkout to this context to enable
-        # other clone URL situations and to provision the bootstrap container
-        # with a more specific/jailed build directory
-    return urlunsplit(url)
 
 
 def get_access_document(build_env):
@@ -170,3 +154,61 @@ def get_access_document(build_env):
         raise AccessDocumentFormatError('Access document is missing requisite ".common.resources" list')
 
     return doc
+
+
+def provision_aws_access_environ(build_env):
+    def exception_is_http_and_not_404(exception):
+        return isinstance(exception, HTTPError) and exception.code != 404
+
+    def exception_is_boto_clienterror(exception):
+        return isinstance(exception, ClientError)
+
+    def exception_is_http(exception):
+        return isinstance(exception, HTTPError)
+
+    @retry(stop_max_attempt_number=4,
+           retry_on_exception=exception_is_http_and_not_404,
+           wrap_exception=True,
+           wait_exponential_multiplier=1000)
+    def _get_access_document():
+        return get_access_document(build_env)
+
+    @retry(stop_max_attempt_number=4,
+           retry_on_exception=exception_is_http,
+           wait_exponential_multiplier=1000)
+    def _request_access(access_document):
+        return request_access(build_env, access_document)
+
+    @retry(stop_max_delay=15000,
+           retry_on_exception=exception_is_boto_clienterror,
+           wait_exponential_multiplier=1000)
+    def _get_mm_credentials(role_arn, session_name):
+        return sts.assume_role(RoleArn=role_arn, RoleSessionName=session_name)['Credentials']
+
+    # TODO: only do this once per build, save the artifact to meta-data and check there first
+    print('~~~ Provision AWS access via Mastermind')
+
+    try:
+        access_document = _get_access_document()
+    except RetryError as e:
+        print_warn(f"Failed to retrieve Mastermind access document, providing only default permissions. {e}")
+        access_document = None
+
+    resp = _request_access(access_document)
+    role_arn = resp['arn']
+
+    job_id = build_env['BUILDKITE_JOB_ID']
+    credentials = _get_mm_credentials(role_arn, session_name=f'buildkite@job-{job_id}')
+
+    build_env['MASTERMIND_ACCESS_KEY_ID'] = credentials['AccessKeyId']
+    build_env['MASTERMIND_SECRET_ACCESS_KEY'] = credentials['SecretAccessKey']
+    build_env['MASTERMIND_SESSION_TOKEN'] = credentials['SessionToken']
+
+    mastermind_bucket = os.environ['MASTERMIND_CONFIGS_BUCKET']
+    build_env['MASTERMIND_AWS_CONFIG_FILE_URL'] = '/'.join([f's3://{mastermind_bucket}', 'aws_configs',
+                                                            project_identifier(build_env), 'build', 'config'])
+    return build_env
+
+
+def project_identifier(build_env):
+    return f"buildkite:{build_env['BUILDKITE_PIPELINE_SLUG']}"

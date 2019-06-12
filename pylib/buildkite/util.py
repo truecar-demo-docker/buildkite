@@ -1,5 +1,8 @@
-import os
 import sys
+import os
+from urllib.parse import urlsplit, urlunsplit
+
+from buildkite.errors import UnsupportedCloneURL
 
 
 def print_debug(msg):
@@ -32,3 +35,36 @@ def enable_http_debug_logging():
     requests_log = logging.getLogger("requests.packages.urllib3")
     requests_log.setLevel(logging.DEBUG)
     requests_log.propagate = True
+
+
+def github_http_url_from_clone_url(clone_url, ref, path):
+    url = urlsplit(clone_url)
+    if not url.scheme == 'https':
+        raise UnsupportedCloneURL("only https clone URLs are supported")
+    if url.path.endswith('.git'):
+        url = url._replace(path=url.path[0:-4])
+    if url.netloc == 'git.corp.tc' or url.netloc == 'github.com':
+        url = url._replace(path=f'{url.path}/{ref}/{path}')
+    else:
+        raise UnsupportedCloneURL(f"don't know how to reshape git clone url for domain {url.netloc}")
+    return urlunsplit(url)
+
+
+def github_raw_url_from_clone_url(clone_url, ref, path):
+    url = urlsplit(clone_url)
+    if not url.scheme == 'https':
+        raise UnsupportedCloneURL("only https clone URLs are supported")
+    if url.path.endswith('.git'):
+        url = url._replace(path=url.path[0:-4])
+    if url.netloc == 'git.corp.tc':
+        url = url._replace(netloc='raw.git.corp.tc',
+                           path=f'{url.path}/{ref}/{path}')
+    elif url.netloc == 'github.com':
+        url = url._replace(netloc='raw.github.com',
+                           path=f'{url.path}/{ref}/{path}')
+    else:
+        raise UnsupportedCloneURL(f"don't know how to retrieve raw files from git repo on domain {url.netloc}")
+        # FIXME: maybe should just move code checkout to this context to enable
+        # other clone URL situations and to provision the bootstrap container
+        # with a more specific/jailed build directory
+    return urlunsplit(url)
