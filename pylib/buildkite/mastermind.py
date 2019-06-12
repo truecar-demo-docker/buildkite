@@ -33,10 +33,10 @@ def request_access(build_env, access_document):
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 202:
+            print(f'Waiting for Mastermind access request to be approved...')
             return None
         else:
-            print(f'Error {resp.status_code} from Mastermind while requesting role')
-            print(resp.text)
+            print(f'Error {resp.status_code} from Mastermind while requesting role: {resp.text}')
             resp.raise_for_status()
 
     url = urljoin(os.environ['MASTERMIND_ENDPOINT'], 'role')
@@ -206,7 +206,7 @@ def provision_aws_access_environ(build_env):
     role_arn = resp['arn']
 
     job_id = build_env['BUILDKITE_JOB_ID']
-    credentials = _get_mm_credentials(role_arn, session_name=f'buildkite@job-{job_id}')
+    credentials = _get_mm_credentials(role_arn, session_name=f'buildkite-{job_id}')
 
     build_env['MASTERMIND_ACCESS_KEY_ID'] = credentials['AccessKeyId']
     build_env['MASTERMIND_SECRET_ACCESS_KEY'] = credentials['SecretAccessKey']
