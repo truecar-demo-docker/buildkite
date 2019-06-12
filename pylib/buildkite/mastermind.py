@@ -20,26 +20,32 @@ env_var_placeholder_pattern = re.compile('@@([a-zA-Z0-9_]+)@@')
 sts = boto3.client('sts')
 
 
-def request_access(access_document):
-    url = urljoin(os.environ['MASTERMIND_ENDPOINT'], 'role')
-    body = role_request(access_document)
-    print_debug(f'Requesting role from Mastermind:\n{body}')
-    deadline = datetime.now() + timedelta(minutes=10)
-    while True:
+def request_access(build_env, access_document):
+    def value_is_none(value):
+        return value is None
+
+    @retry(retry_on_result=value_is_none,
+           stop_max_delay=timedelta(minutes=10).total_seconds(),
+           wait_random_min=1000,
+           wait_random_max=5000)
+    def make_request():
         resp = requests.post(url, auth=('buildkite', os.environ['MASTERMIND_API_KEY']), json=body)
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 202:
-            now = datetime.now()
-            if now > deadline:
-                raise TimeoutError('Timeout while waiting for Mastermind approval. Recommend retrying this job.')
-            seconds_left = round((deadline - now).total_seconds())
-            print(f'Waiting {seconds_left}s longer for approval...')
-            sleep(10)
+            return None
         else:
             print(f'Error {resp.status_code} from Mastermind while requesting role')
             print(resp.text)
             resp.raise_for_status()
+
+    url = urljoin(os.environ['MASTERMIND_ENDPOINT'], 'role')
+    body = role_request(build_env, access_document)
+    print_debug(f'Requesting role from Mastermind:\n{body}')
+    try:
+        return make_request()
+    except RetryError as e:
+        raise TimeoutError(f'Timeout while waiting for Mastermind approval: {e}')
 
 
 def role_request(build_env, access_document):
@@ -53,6 +59,8 @@ def role_request(build_env, access_document):
     default_permissions = [
         {
             'arns': [
+                f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/common/ENVIRONMENT',
+                f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/common/ENVIRONMENT_NAME',
                 f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/build/common/*',
                 f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/build/{buildkite_pipeline_slug}/*',
             ],

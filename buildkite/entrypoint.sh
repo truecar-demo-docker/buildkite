@@ -47,15 +47,11 @@ function configure_environment() {
 }
 
 function configure_docker() {
-    # if credsStore=ecr-login we'll see warnings when pulling from any non-ECR
-    # repo so this refines the config to just use ecr-login for our one REGISTRY_HOST
-
-    [[ ${REGISTRY_HOST:-} ]] || return 0
     local conf_path="$HOME/.docker/config.json"
     local conf='{}'
     [[ -f ${conf_path} ]] && conf="$(< "$conf_path")"
     echo "${conf}" | \
-        jq --arg ecr_host "${REGISTRY_HOST}" \
+        jq --arg ecr_host "${REGISTRY_HOST_ECR}" \
            --arg artifactory_password "${ARTIFACTORY_API_KEY}" \
            --arg artifactory_user "${ARTIFACTORY_API_USER}" \
            --arg artifactory_host "${REGISTRY_HOST_ARTIFACTORY}" \
@@ -72,6 +68,7 @@ function configure_docker() {
 }
 
 setup_ssh_key() {
+    set +x
     local key
     key="$(aws ssm get-parameter --name '/buildkite/ssh-private-key' --with-decryption | jq -e -r '.Parameter.Value')"
     mkdir -p ~/.ssh
