@@ -57,9 +57,9 @@ def role_request(build_env, access_document):
                 f'arn:aws:ssm:{aws_region}:{aws_account_id}:parameter/build/{buildkite_pipeline_slug}/*',
             ],
             'actions': [
-                'ssm:getparameter',
-                'ssm:getparameters',
-                'ssm:getparametersbypath',
+                'ssm:GetParameter',
+                'ssm:GetParameters',
+                'ssm:GetParametersByPath',
             ]
         },
         {
@@ -67,7 +67,7 @@ def role_request(build_env, access_document):
                 'arn:aws:lambda:us-west-2:221344006312:function:build-numbers',
             ],
             'actions': [
-                'lambda:invokefunction',
+                'lambda:InvokeFunction',
             ]
         },
         {
@@ -76,11 +76,11 @@ def role_request(build_env, access_document):
                 'arn:aws:s3:::tc-build-scratch/*',
             ],
             'actions': [
-                's3:getobject',
-                's3:putobject',
-                's3:deleteobject',
-                's3:getobjectversion',
-                's3:listbucket',
+                's3:GetObject',
+                's3:PutObject',
+                's3:DeleteObject',
+                's3:GetObjectVersion',
+                's3:ListBucket',
             ]
         },
         {
@@ -88,8 +88,8 @@ def role_request(build_env, access_document):
                 f'arn:aws:ecr:{aws_region}:{aws_account_id}:*',
             ],
             'actions': [
-                'ecr:getauthorizationtoken',
-                'ecr:describerepositories',
+                'ecr:GetAuthorizationToken',
+                'ecr:DescribeRepositories',
             ],
         },
         {
@@ -97,16 +97,16 @@ def role_request(build_env, access_document):
                 f'arn:aws:ecr:{aws_region}:{aws_account_id}:repository/*',
             ],
             'actions': [
-                'ecr:batchchecklayeravailability',
-                'ecr:getdownloadurlforlayer',
-                'ecr:getrepositorypolicy',
-                'ecr:listimages',
-                'ecr:describeimages',
-                'ecr:batchgetimage',
-                'ecr:initiatelayerupload',
-                'ecr:uploadlayerpart',
-                'ecr:completelayerupload',
-                'ecr:putimage',
+                'ecr:BatchCheckLayerAvailability',
+                'ecr:GetDownloadUrlForLayer',
+                'ecr:GetRepositoryPolicy',
+                'ecr:ListImages',
+                'ecr:DescribeImages',
+                'ecr:BatchGetImage',
+                'ecr:InitiateLayerUpload',
+                'ecr:UploadLayerPart',
+                'ecr:CompleteLayerUpload',
+                'ecr:PutImage',
             ],
         },
     ]
