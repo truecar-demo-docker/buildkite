@@ -23,8 +23,11 @@ steps:
           volumes:
             - maven-repo:/mnt/maven
           env:
-            ARTIFACTORY_API_KEY: foo
-            ARTIFACTORY_API_USER: buildkite
+            - ARTIFACTORY_API_KEY
+            - ARTIFACTORY_API_USER
+    env:
+      ARTIFACTORY_API_KEY: foo
+      ARTIFACTORY_API_USER: buildkite
 
   - wait
 
