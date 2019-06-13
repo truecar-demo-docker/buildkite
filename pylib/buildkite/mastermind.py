@@ -164,13 +164,19 @@ def get_access_document(build_env):
 
 def provision_aws_access_environ(build_env):
     def exception_is_http_and_not_404(exception):
-        return isinstance(exception, HTTPError) and exception.code != 404
+        will_retry = isinstance(exception, HTTPError) and exception.code != 404
+        print(f'ERROR {"(will retry)" if will_retry else ""}: {exception}')
+        return will_retry
 
     def exception_is_boto_clienterror(exception):
-        return isinstance(exception, botocore.exceptions.ClientError)
+        will_retry = isinstance(exception, botocore.exceptions.ClientError)
+        print(f'ERROR {"(will retry)" if will_retry else ""}: {exception}')
+        return will_retry
 
     def exception_is_http(exception):
-        return isinstance(exception, HTTPError)
+        will_retry = isinstance(exception, HTTPError)
+        print(f'ERROR {"(will retry)" if will_retry else ""}: {exception}')
+        return will_retry
 
     @retry(stop_max_attempt_number=4,
            retry_on_exception=exception_is_http_and_not_404,
@@ -195,9 +201,10 @@ def provision_aws_access_environ(build_env):
     print('~~~ Provision AWS access via Mastermind')
 
     try:
+        print('Retrieving .buildkite/aws_access.json file for this commit')
         access_document = _get_access_document()
     except RetryError as e:
-        print(f"Failed to retrieve Mastermind access document, providing only default permissions. {e}")
+        print(f"NOTICE: Failed to retrieve Mastermind access document, providing only default permissions.")
         access_document = None
 
     resp = _request_access(access_document)
