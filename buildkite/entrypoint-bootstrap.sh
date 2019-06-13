@@ -2,6 +2,7 @@
 
 set -euo pipefail
 set +x
+[[ ${BUILDKITE_DEBUG:-} == true ]] && set -x
 
 function configure_docker() {
     local conf_path="$HOME/.docker/config.json"
