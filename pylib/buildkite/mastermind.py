@@ -1,10 +1,9 @@
 import os
 import json
 import re
-from datetime import datetime, timedelta
-from time import sleep
+from datetime import timedelta
 from urllib.request import urlopen
-from urllib.parse import urlsplit, urljoin
+from urllib.parse import urljoin
 from urllib.error import HTTPError
 
 import requests
@@ -31,6 +30,7 @@ def request_access(build_env, access_document):
     def make_request():
         resp = requests.post(url, auth=('buildkite', os.environ['MASTERMIND_API_KEY']), json=body)
         if resp.status_code == 200:
+            print(f'Mastermind access request successful.')
             return resp.json()
         elif resp.status_code == 202:
             print(f'Waiting for Mastermind access request to be approved...')
@@ -51,10 +51,8 @@ def request_access(build_env, access_document):
 def role_request(build_env, access_document):
     aws_region = os.environ['AWS_REGION']
     aws_account_id = os.environ['AWS_ACCOUNT_ID']
-    caller_identity = sts.get_caller_identity()
     buildkite_pipeline_slug = build_env['BUILDKITE_PIPELINE_SLUG']
-
-    print_debug({'caller_identity': caller_identity})
+    role_arn = os.environ['BUILDKITE_TASK_ROLE_ARN']
 
     default_permissions = [
         {
@@ -70,14 +68,12 @@ def role_request(build_env, access_document):
                 'ssm:GetParametersByPath',
             ]
         },
+
         {
-            'arns': [
-                'arn:aws:lambda:us-west-2:221344006312:function:build-numbers',
-            ],
-            'actions': [
-                'lambda:InvokeFunction',
-            ]
+            'arns': ['arn:aws:lambda:us-west-2:221344006312:function:build-numbers'],
+            'actions': ['lambda:InvokeFunction']
         },
+
         {
             'arns': [
                 'arn:aws:s3:::tc-build-scratch',
@@ -91,6 +87,7 @@ def role_request(build_env, access_document):
                 's3:ListBucket',
             ]
         },
+
         {
             'arns': [
                 f'arn:aws:ecr:{aws_region}:{aws_account_id}:*',
@@ -100,6 +97,7 @@ def role_request(build_env, access_document):
                 'ecr:DescribeRepositories',
             ],
         },
+
         {
             'arns': [
                 f'arn:aws:ecr:{aws_region}:{aws_account_id}:repository/*',
@@ -128,7 +126,7 @@ def role_request(build_env, access_document):
         'environment': 'build',
         'principal': {
             'type': 'AWS',
-            'value': caller_identity['Arn'],
+            'value': role_arn,
         },
         'permissions': {
             'resources': resources,
@@ -199,7 +197,7 @@ def provision_aws_access_environ(build_env):
     try:
         access_document = _get_access_document()
     except RetryError as e:
-        print_warn(f"Failed to retrieve Mastermind access document, providing only default permissions. {e}")
+        print(f"Failed to retrieve Mastermind access document, providing only default permissions. {e}")
         access_document = None
 
     resp = _request_access(access_document)

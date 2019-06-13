@@ -2,13 +2,15 @@
 
 set -euo pipefail
 
+export BUILDKITE_TASK_ROLE_ARN='arn:aws:iam::221344006312:role/buildkite-task'
+
 export AWS_PROFILE=build
 ARTIFACTORY_API_USER="$(aws ssm get-parameter --name '/buildkite/artifactory-api-user' --with-decryption | jq -e -r '.Parameter.Value')"
 ARTIFACTORY_API_KEY="$(aws ssm get-parameter --name '/buildkite/artifactory-api-key' --with-decryption | jq -e -r '.Parameter.Value')"
 MASTERMIND_API_KEY="$(aws ssm get-parameter --name '/buildkite/mastermind-api-key' --with-decryption | jq -e -r '.Parameter.Value')"
 export ARTIFACTORY_API_USER ARTIFACTORY_API_KEY MASTERMIND_API_KEY
 
-export $(aws --profile build sts assume-role --role-arn arn:aws:iam::221344006312:role/buildkite-task --role-session-name buildkite-local-dev | jq -r '.Credentials | "AWS_ACCESS_KEY_ID=\(.AccessKeyId) AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey) AWS_SESSION_TOKEN=\(.SessionToken)"')
+export $(aws --profile build sts assume-role --role-arn "$BUILDKITE_TASK_ROLE_ARN" --role-session-name buildkite-local-dev | jq -r '.Credentials | "AWS_ACCESS_KEY_ID=\(.AccessKeyId) AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey) AWS_SESSION_TOKEN=\(.SessionToken)"')
 
 export COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml
 
