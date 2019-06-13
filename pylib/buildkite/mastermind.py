@@ -19,15 +19,44 @@ env_var_placeholder_pattern = re.compile('@@([a-zA-Z0-9_]+)@@')
 sts = boto3.client('sts')
 
 
+def get_access_document(build_env):
+    def sub_env(node):
+        if isinstance(node, dict):
+            return {k: sub_env(v) for k, v in node.items()}
+        elif isinstance(node, list):
+            return [sub_env(v) for v in node]
+        elif isinstance(node, str):
+            def resolve_var(match):
+                return build_env[match.group(1)]
+            return env_var_placeholder_pattern.sub(resolve_var, node)
+        else:
+            return node
+
+    clone_url = build_env['BUILDKITE_REPO']
+    ref = build_env['BUILDKITE_COMMIT']
+    access_path = build_env.get('MASTERMIND_ACCESS_DOCUMENT_PATH',
+                                '.buildkite/aws_access.json')
+    url = github_raw_url_from_clone_url(clone_url, ref, access_path)
+    contents = urlopen(url)
+    doc = json.load(contents)
+    doc = sub_env(doc)
+
+    if 'common' not in doc or 'resources' not in doc['common']:
+        raise AccessDocumentFormatError('Access document is missing requisite ".common.resources" list')
+
+    return doc
+
+
 def request_access(build_env, access_document):
     def value_is_none(value):
         return value is None
 
     @retry(retry_on_result=value_is_none,
+           retry_on_exception=exception_is_http,
            stop_max_delay=timedelta(minutes=10) / timedelta(milliseconds=1),
            wait_random_min=1000,
            wait_random_max=5000)
-    def make_request():
+    def make_request(url, body):
         resp = requests.post(url, auth=('buildkite', os.environ['MASTERMIND_API_KEY']), json=body)
         if resp.status_code == 200:
             print(f'Mastermind access request successful.')
@@ -42,10 +71,7 @@ def request_access(build_env, access_document):
     url = urljoin(os.environ['MASTERMIND_ENDPOINT'], 'role')
     body = role_request(build_env, access_document)
     print_debug(f'Requesting role from Mastermind:\n{body}')
-    try:
-        return make_request()
-    except RetryError as e:
-        raise TimeoutError(f'Timeout while waiting for Mastermind approval: {e}')
+    return make_request(url, body)
 
 
 def role_request(build_env, access_document):
@@ -134,34 +160,6 @@ def role_request(build_env, access_document):
     }
 
 
-def get_access_document(build_env):
-    def sub_env(node):
-        if isinstance(node, dict):
-            return {k: sub_env(v) for k, v in node.items()}
-        elif isinstance(node, list):
-            return [sub_env(v) for v in node]
-        elif isinstance(node, str):
-            def resolve_var(match):
-                return build_env[match.group(1)]
-            return env_var_placeholder_pattern.sub(resolve_var, node)
-        else:
-            return node
-
-    clone_url = build_env['BUILDKITE_REPO']
-    ref = build_env['BUILDKITE_COMMIT']
-    access_path = build_env.get('MASTERMIND_ACCESS_DOCUMENT_PATH',
-                                '.buildkite/aws_access.json')
-    url = github_raw_url_from_clone_url(clone_url, ref, access_path)
-    contents = urlopen(url)
-    doc = json.load(contents)
-    doc = sub_env(doc)
-
-    if 'common' not in doc or 'resources' not in doc['common']:
-        raise AccessDocumentFormatError('Access document is missing requisite ".common.resources" list')
-
-    return doc
-
-
 def provision_aws_access_environ(build_env):
     def exception_is_http_and_not_404(exception):
         will_retry = isinstance(exception, HTTPError) and exception.code != 404
@@ -173,23 +171,11 @@ def provision_aws_access_environ(build_env):
         print(f'ERROR {"(will retry)" if will_retry else ""}: {exception}')
         return will_retry
 
-    def exception_is_http(exception):
-        will_retry = isinstance(exception, HTTPError)
-        print(f'ERROR {"(will retry)" if will_retry else ""}: {exception}')
-        return will_retry
-
     @retry(stop_max_attempt_number=4,
            retry_on_exception=exception_is_http_and_not_404,
-           wrap_exception=True,
            wait_exponential_multiplier=1000)
     def _get_access_document():
         return get_access_document(build_env)
-
-    @retry(stop_max_attempt_number=4,
-           retry_on_exception=exception_is_http,
-           wait_exponential_multiplier=1000)
-    def _request_access(access_document):
-        return request_access(build_env, access_document)
 
     @retry(stop_max_delay=60000,
            retry_on_exception=exception_is_boto_clienterror,
@@ -203,11 +189,11 @@ def provision_aws_access_environ(build_env):
     try:
         print('Retrieving .buildkite/aws_access.json file for this commit')
         access_document = _get_access_document()
-    except RetryError as e:
+    except HTTPError:
         print(f"NOTICE: Failed to retrieve Mastermind access document, providing only default permissions.")
         access_document = None
 
-    resp = _request_access(access_document)
+    resp = request_access(build_env, access_document)
     role_arn = resp['arn']
 
     job_id = build_env['BUILDKITE_JOB_ID']
@@ -225,3 +211,9 @@ def provision_aws_access_environ(build_env):
 
 def project_identifier(build_env):
     return f"buildkite:{build_env['BUILDKITE_PIPELINE_SLUG']}"
+
+
+def exception_is_http(exception):
+    will_retry = isinstance(exception, HTTPError)
+    print(f'ERROR {"(will retry)" if will_retry else ""}: {exception}')
+    return will_retry

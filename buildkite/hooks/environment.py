@@ -15,7 +15,6 @@ import buildkite.meta_data
 
 boto_config = Config(retries=dict(max_attempts=30))
 ssm = boto3.client('ssm', config=boto_config)
-# s3 = boto3.client('s3', config=boto_config)
 
 ssm_param_pattern = re.compile('^ssm-parameter:(.+)$')
 metadata_param_pattern = re.compile('^buildkite-meta-data:(.+)$')
