@@ -11,6 +11,7 @@ from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config
 
 from buildkite.util import print_warn
+import buildkite.meta_data
 
 boto_config = Config(retries=dict(max_attempts=30))
 ssm = boto3.client('ssm', config=boto_config)
@@ -26,8 +27,7 @@ def warn(str):
 
 def buildkite_metadata_get(var, key):
     try:
-        command = ['buildkite-agent', 'meta-data', 'get', key]
-        return subprocess.check_output(command).decode().rstrip('\n')
+        buildkite.meta_data.get(key)
     except subprocess.CalledProcessError as e:
         warn(f'ERROR while attempting to resolve ${var} using buildkite meta-data {key}: exit={e.returncode}')
 
