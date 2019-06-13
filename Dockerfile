@@ -97,5 +97,5 @@ ENV BASH_ENV=$BUILDKITE_RESOURCES_PATH/bash_env \
     BUILDKITE_AGENT_CONFIG=''
 
 STOPSIGNAL SIGINT
-ENTRYPOINT ["/buildkite/entrypoint.sh"]
+ENTRYPOINT ["/buildkite/entrypoint-agent.sh"]
 CMD ["/buildkite/bin/buildkite-agent", "start"]

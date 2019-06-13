@@ -19,7 +19,7 @@ function container_id() {
     awk -F/ '/:name=systemd/ {print $NF}' /proc/self/cgroup
 }
 
-function configure_environment() {
+function configure_agent() {
     if [[ -f /run/ec2-metadata ]]; then
         set -o allexport # this file is lines of `VAR=value` so use allexport to make those vars exported automatically
         source /run/ec2-metadata
@@ -46,39 +46,7 @@ function configure_environment() {
     done
 }
 
-function configure_docker() {
-    local conf_path="$HOME/.docker/config.json"
-    local conf='{}'
-    [[ -f ${conf_path} ]] && conf="$(< "$conf_path")"
-    echo "${conf}" | \
-        jq --arg ecr_host "${REGISTRY_HOST_ECR}" \
-           --arg artifactory_password "${ARTIFACTORY_API_KEY}" \
-           --arg artifactory_user "${ARTIFACTORY_API_USER}" \
-           --arg artifactory_host "${REGISTRY_HOST_ARTIFACTORY}" \
-        '. + {
-            credHelpers: ((.credHelpers // {}) + {
-                ($ecr_host): "ecr-login",
-            }),
-            auths: ((.auths // {}) + {
-                ($artifactory_host): {
-                    auth: ("\($artifactory_user):\($artifactory_password)" | @base64)
-                },
-            }),
-        } | if .credsStore == "ecr-login" then del(.credsStore) else . end' > "${conf_path}"
-}
-
-setup_ssh_key() {
-    set +x
-    local key
-    key="$(aws ssm get-parameter --name '/buildkite/ssh-private-key' --with-decryption | jq -e -r '.Parameter.Value')"
-    mkdir -p ~/.ssh
-    echo "${key}" > ~/.ssh/id_rsa
-    chmod 0600 ~/.ssh/id_rsa
-}
-
-configure_environment
-configure_docker
+configure_agent
 copy_binary
-setup_ssh_key || :
 
 exec "$@"

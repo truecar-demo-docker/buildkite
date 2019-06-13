@@ -141,15 +141,9 @@ def build_container_config():
         'source': 'buildkite-agent',
     }
     volumes = {}
-    # if is_maven_agent():
-    #     vol_name, _ = maven_docker_mount()
-    #     volumes[vol_name]: {
-    #         'bind': '/root/.m2'
-    #     }
-
     config = {
         'image': image.id,
-        'entrypoint': entrypoint(),
+        'entrypoint': ['/buildkite/entrypoint-bootstrap.sh'],
         'command': ['buildkite-agent', 'bootstrap'],
         'name': f'buildkite-build-{build_id}-bootstrap-{job_id}',
         'labels': {
@@ -163,9 +157,7 @@ def build_container_config():
         'volumes': volumes,
         'environment': build_env,
         'network_mode': f'container:{self_container_id()}',
-        'log_config': LogConfig(
-            type='local',
-        ),
+        'log_config': LogConfig(type='local'),
     }
 
     if cgroup_parent():
