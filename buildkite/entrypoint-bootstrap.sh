@@ -62,10 +62,11 @@ EOF
     export AWS_PROFILE=default
 
     # sanity check that default config works as expected
-    aws sts get-caller-identity --output | jq -r .Arn | grep -q 'assumed-role/mm(_dev)?_role_'
+    aws sts get-caller-identity --output json | tee /dev/stderr | jq -er .Arn | grep -Eq 'assumed-role/mm(_dev)?_role_'
 }
 
 configure_docker
 setup_ssh_key || :
+setup_aws_config
 
 exec "$@"

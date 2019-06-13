@@ -8,10 +8,10 @@ from urllib.error import HTTPError
 
 import requests
 import boto3
-from botocore.exceptions import ClientError
+import botocore.exceptions
 from retrying import retry, RetryError
 
-from buildkite.util import print_debug, print_warn, github_raw_url_from_clone_url
+from buildkite.util import print_debug, github_raw_url_from_clone_url
 from buildkite.errors import AccessDocumentFormatError
 
 
@@ -167,7 +167,7 @@ def provision_aws_access_environ(build_env):
         return isinstance(exception, HTTPError) and exception.code != 404
 
     def exception_is_boto_clienterror(exception):
-        return isinstance(exception, ClientError)
+        return isinstance(exception, botocore.exceptions.ClientError)
 
     def exception_is_http(exception):
         return isinstance(exception, HTTPError)
@@ -185,7 +185,7 @@ def provision_aws_access_environ(build_env):
     def _request_access(access_document):
         return request_access(build_env, access_document)
 
-    @retry(stop_max_delay=15000,
+    @retry(stop_max_delay=60000,
            retry_on_exception=exception_is_boto_clienterror,
            wait_exponential_multiplier=1000)
     def _get_mm_credentials(role_arn, session_name):
