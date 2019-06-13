@@ -33,8 +33,9 @@ def get_access_document(build_env):
 
     clone_url = build_env['BUILDKITE_REPO']
     ref = build_env['BUILDKITE_COMMIT']
-    access_path = build_env.get('MASTERMIND_ACCESS_DOCUMENT_PATH',
-                                '.buildkite/aws_access.json')
+    access_path = build_env.get('MASTERMIND_ACCESS_DOCUMENT_PATH', None)
+    if access_path is None:
+        return None
     url = github_raw_url_from_clone_url(clone_url, ref, access_path)
     response = requests.get(url)
     response.raise_for_status()
@@ -196,8 +197,10 @@ def provision_aws_access_environ(build_env):
         print('Retrieving .buildkite/aws_access.json file for this commit')
         access_document = _get_access_document()
     except HTTPError:
-        print(f"NOTICE: Failed to retrieve Mastermind access document, providing only default permissions.")
         access_document = None
+
+    if access_document is None:
+        print(f"NOTICE: Failed to retrieve Mastermind access document, providing only default permissions.")
 
     resp = request_access(build_env, access_document)
     role_arn = resp['arn']

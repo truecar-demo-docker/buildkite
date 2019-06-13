@@ -126,10 +126,10 @@ def passthru_aws_env(build_env):
 
 def build_container_config():
     build_env = provision_aws_access(build_environment(os.environ))
-    job_id = os.environ['BUILDKITE_JOB_ID']
-    build_id = os.environ['BUILDKITE_BUILD_ID']
-    job_label = os.environ.get('BUILDKITE_LABEL', '')
-    project_slug = os.environ.get('BUILDKITE_PROJECT_SLUG', '')
+    job_id = build_env['BUILDKITE_JOB_ID']
+    build_id = build_env['BUILDKITE_BUILD_ID']
+    job_label = build_env.get('BUILDKITE_LABEL', '')
+    project_slug = build_env.get('BUILDKITE_PROJECT_SLUG', '')
     image = docker_image()
     datadog_logs_config = {
         'buildkite.bootstrap.docker_image': image.id,
