@@ -1,15 +1,14 @@
 import os
-import json
 import re
 from datetime import timedelta
-from urllib.request import urlopen
 from urllib.parse import urljoin
-from urllib.error import HTTPError
+import json.decoder
 
 import requests
+from requests.exceptions import HTTPError
 import boto3
 import botocore.exceptions
-from retrying import retry, RetryError
+from retrying import retry
 
 from buildkite.util import print_debug, github_raw_url_from_clone_url
 from buildkite.errors import AccessDocumentFormatError
@@ -37,9 +36,14 @@ def get_access_document(build_env):
     access_path = build_env.get('MASTERMIND_ACCESS_DOCUMENT_PATH',
                                 '.buildkite/aws_access.json')
     url = github_raw_url_from_clone_url(clone_url, ref, access_path)
-    contents = urlopen(url)
-    doc = json.load(contents)
-    doc = sub_env(doc)
+    response = requests.get(url)
+    response.raise_for_status()
+
+    try:
+        doc = sub_env(response.json())
+    except json.decoder.JSONDecodeError as e:
+        print_debug(f'aws_access.json = {repr(response.text)}')
+        raise(AccessDocumentFormatError(f'Access document failed to parse as JSON: {e}'))
 
     if 'common' not in doc or 'resources' not in doc['common']:
         raise AccessDocumentFormatError('Access document is missing requisite ".common.resources" list')
@@ -60,7 +64,9 @@ def request_access(build_env, access_document):
         resp = requests.post(url, auth=('buildkite', os.environ['MASTERMIND_API_KEY']), json=body)
         if resp.status_code == 200:
             print(f'Mastermind access request successful.')
-            return resp.json()
+            response = resp.json()
+            print_debug(response)
+            return response
         elif resp.status_code == 202:
             print(f'Waiting for Mastermind access request to be approved...')
             return None
@@ -162,7 +168,7 @@ def role_request(build_env, access_document):
 
 def provision_aws_access_environ(build_env):
     def exception_is_http_and_not_404(exception):
-        will_retry = isinstance(exception, HTTPError) and exception.code != 404
+        will_retry = isinstance(exception, HTTPError) and exception.response.status_code != 404
         print(f'ERROR {"(will retry)" if will_retry else ""}: {exception}')
         return will_retry
 
