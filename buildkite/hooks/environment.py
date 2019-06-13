@@ -27,7 +27,7 @@ def warn(str):
 
 def buildkite_metadata_get(var, key):
     try:
-        buildkite.meta_data.get(key)
+        return buildkite.meta_data.get(key)
     except subprocess.CalledProcessError as e:
         warn(f'ERROR while attempting to resolve ${var} using buildkite meta-data {key}: exit={e.returncode}')
 
