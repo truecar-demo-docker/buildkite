@@ -7,7 +7,10 @@ This is a Docker image which runs the Buildkite agent and also the builds themse
 
 ## What do I need to know to start building?
 
-- There are really great Docs at <https://buildkite.com/docs/>
+- Okta/SSO setup is pending. For now, someone with access to our account will have to invite you to sign up by email. Ask in #guild-cicd or ask @rlong for an invite.
+- Our org is <https://buildkite.com/truecar-1>
+- There are really great Docs at <https://buildkite.com/docs/> -- good place to start
+
 - abp-frontend is pretty close to fully implemented, maybe some issues with Cypress jobs
 - abp-backend is pretty close to fully implemented, could use some optimization/parallelization of Test job
 - [some data-eng jobs](https://buildkite.com/truecar-1?team=data-engineering) (`listings`, `image-processor`, `build-data-processor`, `vin-decoder`) are implemented, the Maven build at least seems to work
