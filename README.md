@@ -77,3 +77,7 @@ This is a Docker image which runs the Buildkite agent and also the builds themse
     - Feel free to use and/or create any other plugins you may need. The intention is that plugins are fully supported in our implementation.
 
 - Spacepods CI/CD & Gatekeeper integration is not yet implemented, so builds will trigger via Github hooks but the CI side of things doesn't happen via Buildkite yet
+
+# Architecture Overview
+
+![Buildkite architecture diagram](./docs/diagrams/high-level.png)
