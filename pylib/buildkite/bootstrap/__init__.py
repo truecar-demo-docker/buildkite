@@ -19,6 +19,7 @@ maven_settings_template_path = Path(os.environ['BUILDKITE_RESOURCES_PATH']).join
 environment_whitelist = [
     'AWS_EXECUTION_ENV',
     'AWS_REGION',
+    'AWS_ACCOUNT_ID',
     'BASH_ENV',
     'REGISTRY_HOST',
     'REGISTRY_HOST_ECR',
