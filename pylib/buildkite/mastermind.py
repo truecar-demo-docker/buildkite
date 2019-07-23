@@ -1,8 +1,9 @@
 import os
 import re
 from datetime import timedelta
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import json.decoder
+from functools import reduce
 
 import requests
 from requests.exceptions import HTTPError
@@ -16,6 +17,7 @@ from buildkite.errors import AccessDocumentFormatError
 
 env_var_placeholder_pattern = re.compile('@@([a-zA-Z0-9_]+)@@')
 sts = boto3.client('sts')
+
 
 
 def get_access_document(build_env):
@@ -87,6 +89,12 @@ def role_request(build_env, access_document):
     buildkite_pipeline_slug = build_env['BUILDKITE_PIPELINE_SLUG']
     role_arn = os.environ['BUILDKITE_TASK_ROLE_ARN']
 
+    rw_buckets = ['tc-build-scratch']
+
+    if 'BUILDKITE_ARTIFACT_UPLOAD_DESTINATION' in os.environ:
+        artifacts_bucket = urlparse(os.environ['BUILDKITE_ARTIFACT_UPLOAD_DESTINATION']).hostname
+        rw_buckets.append(artifacts_bucket)
+
     default_permissions = [
         {
             'arns': [
@@ -108,16 +116,20 @@ def role_request(build_env, access_document):
         },
 
         {
-            'arns': [
-                'arn:aws:s3:::tc-build-scratch',
-                'arn:aws:s3:::tc-build-scratch/*',
-            ],
+            'arns': reduce(list.__add__, ([
+                f'arn:aws:s3:::{bucket}',
+                f'arn:aws:s3:::{bucket}/*',
+            ] for bucket in rw_buckets)),
             'actions': [
-                's3:GetObject',
-                's3:PutObject',
                 's3:DeleteObject',
+                's3:GetObject',
+                's3:GetObjectAcl',
                 's3:GetObjectVersion',
+                's3:GetObjectVersionAcl',
                 's3:ListBucket',
+                's3:PutObject',
+                's3:PutObjectAcl',
+                's3:PutObjectVersionAcl'
             ]
         },
 
