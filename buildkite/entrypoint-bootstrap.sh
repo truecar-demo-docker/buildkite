@@ -25,14 +25,6 @@ function configure_docker() {
         } | if .credsStore == "ecr-login" then del(.credsStore) else . end' > "${conf_path}"
 }
 
-setup_ssh_key() {
-    local key
-    key="$(aws ssm get-parameter --name '/buildkite/ssh-private-key' --with-decryption | jq -e -r '.Parameter.Value')"
-    mkdir -p ~/.ssh
-    echo "${key}" > ~/.ssh/id_rsa
-    chmod 0600 ~/.ssh/id_rsa
-}
-
 setup_aws_config() {
     [[ ${MASTERMIND_AWS_CONFIG_FILE_URL:-} ]] || return 0
 
@@ -67,7 +59,6 @@ EOF
 }
 
 configure_docker
-setup_ssh_key || :
 setup_aws_config
 
 exec "$@"
