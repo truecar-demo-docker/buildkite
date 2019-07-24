@@ -89,12 +89,6 @@ def role_request(build_env, access_document):
     buildkite_pipeline_slug = build_env['BUILDKITE_PIPELINE_SLUG']
     role_arn = os.environ['BUILDKITE_TASK_ROLE_ARN']
 
-    rw_buckets = ['tc-build-scratch']
-
-    if 'BUILDKITE_ARTIFACT_UPLOAD_DESTINATION' in os.environ:
-        artifacts_bucket = urlparse(os.environ['BUILDKITE_ARTIFACT_UPLOAD_DESTINATION']).hostname
-        rw_buckets.append(artifacts_bucket)
-
     default_permissions = [
         {
             'arns': [
@@ -107,31 +101,18 @@ def role_request(build_env, access_document):
                 'ssm:GetParameter',
                 'ssm:GetParameters',
                 'ssm:GetParametersByPath',
-            ]
+            ],
         },
 
         {
-            'arns': ['arn:aws:lambda:us-west-2:221344006312:function:build-numbers'],
-            'actions': ['lambda:InvokeFunction']
-        },
-
-        {
-            'arns': reduce(list.__add__, ([
-                f'arn:aws:s3:::{bucket}',
-                f'arn:aws:s3:::{bucket}/*',
-            ] for bucket in rw_buckets)),
+            'arns': [
+                'arn:aws:lambda:us-west-2:221344006312:function:build-numbers',
+            ],
             'actions': [
-                's3:DeleteObject',
-                's3:GetObject',
-                's3:GetObjectAcl',
-                's3:GetObjectVersion',
-                's3:GetObjectVersionAcl',
-                's3:ListBucket',
-                's3:PutObject',
-                's3:PutObjectAcl',
-                's3:PutObjectVersionAcl'
-            ]
+                'lambda:InvokeFunction',
+            ],
         },
+
 
         {
             'arns': [
@@ -161,6 +142,32 @@ def role_request(build_env, access_document):
             ],
         },
     ]
+
+    rw_buckets = []
+    if 'BUILDKITE_ARTIFACT_UPLOAD_DESTINATION' in os.environ:
+        artifacts_bucket = urlparse(os.environ['BUILDKITE_ARTIFACT_UPLOAD_DESTINATION']).hostname
+        rw_buckets.append(artifacts_bucket)
+
+    if len(rw_buckets) > 0:
+        default_permissions.append(
+            {
+                'arns': reduce(list.__add__, ([
+                    f'arn:aws:s3:::{bucket}',
+                    f'arn:aws:s3:::{bucket}/*',
+                ] for bucket in rw_buckets)),
+                'actions': [
+                    's3:DeleteObject',
+                    's3:GetObject',
+                    's3:GetObjectAcl',
+                    's3:GetObjectVersion',
+                    's3:GetObjectVersionAcl',
+                    's3:ListBucket',
+                    's3:PutObject',
+                    's3:PutObjectAcl',
+                    's3:PutObjectVersionAcl'
+                ]
+            }
+        )
 
     resources = default_permissions
     if access_document is not None:
