@@ -54,8 +54,12 @@ EOF
     # instruct clients to use profile "default" from the mastermind config
     export AWS_PROFILE=default
 
-    # sanity check that default config works as expected
-    aws sts get-caller-identity --output json | tee /dev/stderr | jq -er .Arn | grep -Eq 'assumed-role/mm(_dev)?_role_'
+    # retry this, as sometimes (when freshly provisioned) it can take a moment to become assumable
+    while true; do
+        # sanity check that default config works as expected
+        aws sts get-caller-identity --output json | tee /dev/stderr | jq -er .Arn | grep -Eq 'assumed-role/mm(_dev)?_role_' && break
+        sleep 1
+    done
 }
 
 configure_docker
