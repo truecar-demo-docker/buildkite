@@ -2,7 +2,7 @@
 
 set -euo pipefail
 set +x
-[[ ${BUILDKITE_DEBUG:-} == true ]] && set -x
+[[ ${BUILDKITE_DEBUG:-false} == true ]] && set -x
 
 function configure_docker() {
     local conf_path="$HOME/.docker/config.json"
@@ -47,7 +47,7 @@ EOF
     # FIXME: perhaps move this into Mastermind?
     sed -i "s:credential_source\s*=\s*EcsContainer:source_profile = mastermind\nsession_name = buildkite-${BUILDKITE_JOB_ID}:g" "$HOME/.aws/config"
 
-    [[ ${BUILDKITE_AGENT_DEBUG:-} ]] && cat "$HOME/.aws/config"
+    [[ ${BUILDKITE_AGENT_DEBUG:-false} = true ]] && cat "$HOME/.aws/config"
 
     # explicitly instruct clients to use shared config file
     export AWS_SDK_LOAD_CONFIG=true
