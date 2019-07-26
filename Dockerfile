@@ -91,6 +91,7 @@ ENV PYTHONPATH "${PYTHONPATH}:/var/lib/buildkite-agent/pylib"
 
 COPY --chown=999:999 docker-config.json ./.docker/config.json
 COPY --chown=999:999 ./buildkite/ /buildkite
+COPY --chown=999:999 ./build-tools/* /usr/local/bin/
 
 ENV BASH_ENV=$BUILDKITE_RESOURCES_PATH/bash_env \
     BUILDKITE_BOOTSTRAP_SCRIPT_PATH=/buildkite/bootstrap.sh \
