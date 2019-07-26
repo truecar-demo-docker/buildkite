@@ -6,7 +6,7 @@ from buildkite.errors import UnsupportedCloneURL
 
 
 def print_debug(msg):
-    if os.environ.get('BUILDKITE_AGENT_DEBUG', False):
+    if os.environ.get('BUILDKITE_AGENT_DEBUG', 'false') == 'true':
         print(msg)
 
 
