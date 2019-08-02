@@ -45,7 +45,7 @@ EOF
     done
 
     # FIXME: perhaps move this into Mastermind?
-    sed -i "s:credential_source\s*=\s*EcsContainer:source_profile = mastermind\nsession_name = buildkite:g" "$HOME/.aws/config"
+    sed -i "s:credential_source\s*=\s*EcsContainer:source_profile = mastermind\nsession_name = buildkite-${BUILDKITE_JOB_ID}:g" "$HOME/.aws/config"
 
     [[ ${BUILDKITE_AGENT_DEBUG:-false} = true ]] && cat "$HOME/.aws/config"
 
