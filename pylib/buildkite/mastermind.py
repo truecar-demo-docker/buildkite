@@ -225,7 +225,7 @@ def provision_aws_access_environ(build_env):
     role_arn = resp['arn']
 
     job_id = build_env['BUILDKITE_JOB_ID']
-    credentials = _get_mm_credentials(role_arn, session_name=f'buildkite-{job_id}')
+    credentials = _get_mm_credentials(role_arn, session_name=f'buildkite')
 
     build_env['MASTERMIND_ACCESS_KEY_ID'] = credentials['AccessKeyId']
     build_env['MASTERMIND_SECRET_ACCESS_KEY'] = credentials['SecretAccessKey']
