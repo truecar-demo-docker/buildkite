@@ -55,10 +55,23 @@ EOF
     export AWS_PROFILE=default
 
     # retry this, as sometimes (when freshly provisioned) it can take a moment to become assumable
+    failures=0
     while true; do
         # sanity check that default config works as expected
-        aws sts get-caller-identity --output json | tee /dev/stderr | jq -er .Arn | grep -Eq 'assumed-role/mm(_dev)?_role_' && break
-        sleep 1
+        debug_arg=''
+        [[ $failures -gt 4 ]] && debug_arg='--debug'
+        aws "${debug_arg}" \
+            sts get-caller-identity --output json \
+            | tee /dev/stderr \
+            | jq -er .Arn \
+            | grep -Eq 'assumed-role/mm(_dev)?_role_' \
+            && break
+        sleep "$failures"
+        ((failures+=1))
+    done
+
+    while true; do
+        sleep 3
     done
 }
 
