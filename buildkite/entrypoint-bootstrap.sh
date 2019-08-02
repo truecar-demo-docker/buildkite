@@ -69,10 +69,6 @@ EOF
         sleep "$failures"
         ((failures+=1))
     done
-
-    while true; do
-        sleep 3
-    done
 }
 
 configure_docker
