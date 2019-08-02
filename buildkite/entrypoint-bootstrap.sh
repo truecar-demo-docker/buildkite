@@ -58,9 +58,9 @@ EOF
     failures=0
     while true; do
         # sanity check that default config works as expected
-        debug_arg=''
-        [[ $failures -gt 4 ]] && debug_arg='--debug'
-        aws "${debug_arg}" \
+        debug_arg=()
+        [[ $failures -gt 4 ]] && debug_arg+=(--debug)
+        aws "${debug_arg[@]}" \
             sts get-caller-identity --output json \
             | tee /dev/stderr \
             | jq -er .Arn \
