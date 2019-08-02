@@ -17,6 +17,8 @@ maven_settings_template_path = Path(os.environ['BUILDKITE_RESOURCES_PATH']).join
 
 # environment variables from os.environ to pass on to bootstrap container
 environment_whitelist = [
+    'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI',
+    'AWS_DEFAULT_REGION',
     'AWS_EXECUTION_ENV',
     'AWS_REGION',
     'AWS_ACCOUNT_ID',
@@ -29,7 +31,6 @@ environment_whitelist = [
 ]
 
 aws_env_vars = [
-    'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI',
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
     'AWS_SESSION_TOKEN',
@@ -93,7 +94,7 @@ def build_environment(environ):
         if var in environ:
             env[var] = environ[var]
 
-    if 'AWS_REGION' in env:
+    if 'AWS_REGION' in env and 'AWS_DEFAULT_REGION' not in env:
         env['AWS_DEFAULT_REGION'] = env['AWS_REGION']
 
     # job vars from the env file
@@ -172,7 +173,7 @@ def create_container(config):
 
 
 def is_maven_agent():
-    return os.environ['BUILDKITE_AGENT_META_DATA_QUEUE'] == 'maven'
+    return os.environ.get('BUILDKITE_AGENT_META_DATA_QUEUE', 'default') == 'maven'
 
 
 def maven_docker_mount():

@@ -223,14 +223,7 @@ def provision_aws_access_environ(build_env):
 
     resp = request_access(build_env, access_document)
     role_arn = resp['arn']
-
-    job_id = build_env['BUILDKITE_JOB_ID']
-    credentials = _get_mm_credentials(role_arn, session_name=f'buildkite-{job_id}')
-
-    build_env['MASTERMIND_ACCESS_KEY_ID'] = credentials['AccessKeyId']
-    build_env['MASTERMIND_SECRET_ACCESS_KEY'] = credentials['SecretAccessKey']
-    build_env['MASTERMIND_SESSION_TOKEN'] = credentials['SessionToken']
-
+    build_env['MASTERMIND_ROLE_ARN'] = role_arn
     mastermind_bucket = os.environ['MASTERMIND_CONFIGS_BUCKET']
     build_env['MASTERMIND_AWS_CONFIG_FILE_URL'] = '/'.join([f's3://{mastermind_bucket}', 'aws_configs',
                                                             project_identifier(build_env), 'build', 'config'])

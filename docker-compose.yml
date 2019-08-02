@@ -11,12 +11,14 @@ services:
     image: truecar/buildkite
     init: true
     environment:
-      - BUILDKITE_AGENT_TAGS=environment=local,queue=agent-dev
+      - BUILDKITE_AGENT_TAGS=environment=local #,queue=agent-dev
+      - BUILDKITE_AGENT_PRIORITY=99 # make this a first candidate for builds
       - AWS_REGION=us-west-2
       - AWS_DEFAULT_REGION=us-west-2
       - AWS_ACCOUNT_ID=221344006312
       - REGISTRY_HOST_ECR
       - REGISTRY_HOST_ARTIFACTORY
+    hostname: ${USER}-local
     volumes:
       - ./test/:/test
       - plugins:/buildkite/plugins

@@ -1,8 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
-set +x
-[[ ${BUILDKITE_DEBUG:-false} == true ]] && set -x
+[[ ${BUILDKITE_AGENT_DEBUG:-false} == true ]] && set -x
 
 function configure_docker() {
     local conf_path="$HOME/.docker/config.json"
@@ -32,11 +31,10 @@ setup_aws_config() {
 
     cat <<EOF > "$HOME/.aws/credentials"
 [mastermind]
-aws_access_key_id = ${MASTERMIND_ACCESS_KEY_ID}
-aws_secret_access_key = ${MASTERMIND_SECRET_ACCESS_KEY}
-aws_session_token = ${MASTERMIND_SESSION_TOKEN}
+role_arn = ${MASTERMIND_ROLE_ARN}
+session_name = buildkite-${BUILDKITE_JOB_ID}
+credential_source = EcsContainer
 EOF
-    unset MASTERMIND_ACCESS_KEY_ID MASTERMIND_SECRET_ACCESS_KEY MASTERMIND_SESSION_TOKEN
 
     while true; do
         # retry this, as sometimes (when freshly provisioned) it can take a moment to become readable
