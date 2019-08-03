@@ -13,15 +13,15 @@ function configure_docker() {
            --arg artifactory_user "${ARTIFACTORY_API_USER}" \
            --arg artifactory_host "${REGISTRY_HOST_ARTIFACTORY}" \
         '. + {
-            credHelpers: ((.credHelpers // {}) + {
-                ($ecr_host): "ecr-login",
-            }),
             auths: ((.auths // {}) + {
                 ($artifactory_host): {
                     auth: ("\($artifactory_user):\($artifactory_password)" | @base64)
                 },
             }),
         } | if .credsStore == "ecr-login" then del(.credsStore) else . end' > "${conf_path}"
+
+
+    eval $(aws --profile default ecr get-login --no-include-email)
 }
 
 setup_aws_config() {
@@ -69,7 +69,7 @@ EOF
     done
 }
 
-configure_docker
 setup_aws_config
+configure_docker
 
 exec "$@"
