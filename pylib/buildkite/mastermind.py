@@ -227,6 +227,10 @@ def provision_aws_access_environ(build_env):
     mastermind_bucket = os.environ['MASTERMIND_CONFIGS_BUCKET']
     build_env['MASTERMIND_AWS_CONFIG_FILE_URL'] = '/'.join([f's3://{mastermind_bucket}', 'aws_configs',
                                                             project_identifier(build_env), 'build', 'config'])
+    if 'aws_config_url' in resp:
+        # Use the key provided by Mastermind, if provided
+        build_env['MASTERMIND_AWS_CONFIG_FILE_URL'] = resp['aws_config_url']
+
     return build_env
 
 
