@@ -34,6 +34,10 @@ This is a Docker image which runs the Buildkite agent and also the builds themse
 
 - Docker access is available to all builds by default, just as you'd expect; no need to ask for it or do anything special.
 
+    - **A major caveat: mounting volumes is not so straightforward.**
+
+        Because the builds themselves are running in Docker containers, the usual problems associated with filesystem mapping come into play. For the most part, paths under `/buildkite` _should_ be the same inside and outside the build container, so that e.g. the buildkite-docker plugin works as expected to mount the code checkout path.
+
 - When building with Docker, it is recommended to define a `docker-compose.yml` and use the [docker-compose plugin](https://github.com/buildkite-plugins/docker-compose-buildkite-plugin/) as it handles a lot of work automatically.
 
 - Customized behaviours:
