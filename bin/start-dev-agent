@@ -14,4 +14,4 @@ export $(aws --profile build sts assume-role --role-arn "$BUILDKITE_TASK_ROLE_AR
 
 export COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml
 
-docker-compose up "$@"
+docker-compose run "$@"

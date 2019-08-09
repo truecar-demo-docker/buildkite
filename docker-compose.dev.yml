@@ -7,8 +7,8 @@ services:
     volumes:
       - ./pylib:/var/lib/buildkite-agent/pylib
       - ./buildkite:/buildkite/
-      - /buildkite/bin:/buildkite/bin
-      - /buildkite/builds:/buildkite/builds
+      # - /buildkite/bin:/buildkite/bin
+      # - /buildkite/builds:/buildkite/builds
 
   agent-maven:
     <<: *agent
