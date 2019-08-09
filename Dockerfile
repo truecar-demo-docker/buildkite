@@ -98,6 +98,8 @@ ENV BASH_ENV=$BUILDKITE_RESOURCES_PATH/bash_env \
     # Use no config file, we'll config Buildkite exclusively via ENV
     BUILDKITE_AGENT_CONFIG=''
 
+ENV PYTHONIOENCODING=utf8
+
 STOPSIGNAL SIGINT
 ENTRYPOINT ["/buildkite/entrypoint-agent.sh"]
 CMD ["/buildkite/bin/buildkite-agent", "start"]
