@@ -100,7 +100,7 @@ def build_environment(environ):
     # job vars from the env file
     env_file = env.get('BUILDKITE_ENV_FILE', None)
     if env_file:
-        with open(env_file, 'r', encoding = "utf-8") as f:
+        with open(env_file, 'r', encoding = 'utf-8') as f:
             for line in f.readlines():
                 var, value = line.strip().split('=', 1)
                 value = unescape_value(value)
