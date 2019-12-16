@@ -144,7 +144,9 @@ def role_request(build_env, access_document):
     ]
 
     rw_buckets = []
-    if 'BUILDKITE_ARTIFACT_UPLOAD_DESTINATION' in os.environ:
+    if 'BUILDKITE_ARTIFACT_UPLOAD_DESTINATION' in os.environ and\
+            os.environ['BUILDKITE_ARTIFACT_UPLOAD_DESTINATION'].startswith('s3://') :
+
         artifacts_bucket = urlparse(os.environ['BUILDKITE_ARTIFACT_UPLOAD_DESTINATION']).hostname
         rw_buckets.append(artifacts_bucket)
 

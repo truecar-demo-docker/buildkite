@@ -50,6 +50,18 @@
       <id>artifactory</id>
     </profile>
   </profiles>
+  <distributionManagement>
+      <repository>
+          <id>central</id>
+          <name>ip-10-102-13-204-releases</name>
+          <url>https://artifactory.corp.tc/artifactory/libs-snapshot-local</url>
+      </repository>
+      <snapshotRepository>
+          <id>snapshots</id>
+          <name>ip-10-102-13-204-snapshots</name>
+          <url>https://artifactory.corp.tc/artifactory/libs-snapshot-local</url>
+      </snapshotRepository>
+  </distributionManagement>
   <activeProfiles>
     <activeProfile>artifactory</activeProfile>
   </activeProfiles>
