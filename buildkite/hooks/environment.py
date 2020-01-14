@@ -10,8 +10,6 @@ import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config
 
-from buildkite.util import print_warn
-import buildkite.meta_data
 
 boto_config = Config(retries=dict(max_attempts=30))
 ssm = boto3.client('ssm', config=boto_config)
@@ -23,10 +21,17 @@ metadata_param_pattern = re.compile('^buildkite-meta-data:(.+)$')
 def warn(str):
     print_warn(f'\x1b[31m{str}\x1b[0m')
 
+def print_warn(msg):
+    print(msg, file=sys.stderr)
+    # expand this section
+    print(f'^^^ +++', file=sys.stderr)
 
-def buildkite_metadata_get(var, key):
+def buildkite_metadata_get(var, key, default_value=None):
     try:
-        return buildkite.meta_data.get(key)
+        command = ['buildkite-agent', 'meta-data', 'get', key]
+        if default_value is not None:
+            command.append(['--default', default_value])
+        return subprocess.check_output(command).decode().rstrip('\n')
     except subprocess.CalledProcessError as e:
         warn(f'ERROR while attempting to resolve ${var} using buildkite meta-data {key}: exit={e.returncode}')
 

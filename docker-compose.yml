@@ -18,7 +18,7 @@ services:
       - AWS_ACCOUNT_ID=221344006312
       - REGISTRY_HOST_ECR
       - REGISTRY_HOST_ARTIFACTORY
-    hostname: ${USER}-local
+    hostname: buildkite-local
     volumes:
       - ./test/:/test
       - plugins:/buildkite/plugins
