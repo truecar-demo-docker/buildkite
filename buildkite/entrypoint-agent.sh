@@ -12,7 +12,7 @@ function copy_binary() {
     binary_path="$(command -v buildkite-agent)"
 
     [[ -x /buildkite/bin/buildkite-agent ]] && diff -q "$binary_path" /buildkite/bin/buildkite-agent && return 0
-    cp -v "$binary_path" /buildkite/bin/
+    cp -v "$binary_path" /buildkite/bin/ || true # This can fail when the file is in use
 }
 
 function container_id() {
