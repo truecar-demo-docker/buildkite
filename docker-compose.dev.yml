@@ -5,7 +5,6 @@ services:
     env_file:
       - .env
     volumes:
-      - ./pylib:/var/lib/buildkite-agent/pylib
       - ./buildkite:/buildkite/
       - /buildkite/bin:/buildkite/bin
       - /buildkite/builds:/buildkite/builds
