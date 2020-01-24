@@ -3,6 +3,18 @@
 set -euo pipefail
 [[ ${BUILDKITE_DEBUG:-false} = true ]] && set -x
 
+function copy_binary() {
+    # /buildkite/bin is mounted as a host volume to make the binary available for
+    # builds to share with their constituent containers. because it's a host volume,
+    # it may end up empty or containing an old binary, so copy our binary to it in
+    # that case. # FIXME: this doesn't seem terribly robust, but it works for now.
+    local binary_path
+    binary_path="$(command -v buildkite-agent)"
+
+    [[ -x /buildkite/bin/buildkite-agent ]] && diff -q "$binary_path" /buildkite/bin/buildkite-agent && return 0
+    cp -v "$binary_path" /buildkite/bin/
+}
+
 function container_id() {
     awk -F/ '/:name=systemd/ {print $NF}' /proc/self/cgroup
 }
@@ -35,5 +47,6 @@ function configure_agent() {
 }
 
 configure_agent
+copy_binary
 
 exec "$@"

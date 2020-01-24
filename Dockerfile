@@ -38,7 +38,7 @@ RUN cd /tmp \
   && install -v docker-credential-ecr-login /usr/local/bin/docker-credential-ecr-login
 
 # https://github.com/buildkite/agent/releases
-ARG BUILDKITE_AGENT_VERSION="3.13.*"
+ARG BUILDKITE_AGENT_VERSION="3.13.2-3097"
 RUN set -x \
  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32A37959C2FA5C3C99EFBC32A79206696452D198 \
  && add-apt-repository "deb https://apt.buildkite.com/buildkite-agent stable main" \
@@ -48,9 +48,11 @@ RUN set -x \
 RUN set -x \
   && add-apt-repository ppa:git-core/ppa \
   && apt-get update \
-  && apt-get upgrade -y git \
+  && apt-get install --only-upgrade -y git \
   && apt-get install -y git-lfs \
   && git lfs install
+
+RUN pip3 install boto3==1.9.149 awscli==1.16.204
 
 RUN mkdir -pv \
       /buildkite/builds \
@@ -58,28 +60,26 @@ RUN mkdir -pv \
       /buildkite/plugins \
       /buildkite/bin
 
-RUN pip3 install boto3==1.9.149 awscli==1.16.204
+# allow ecr login and credential helper to coexist
+# https://github.com/awslabs/amazon-ecr-credential-helper/issues/154#issuecomment-472988526
+COPY ./docker-credential-ecr-login-no-error /usr/local/bin/docker-credential-ecr-login-no-error
+RUN chmod +x /usr/local/bin/docker-credential-ecr-login-no-error
 
-WORKDIR /var/lib/buildkite-agent
+COPY ./buildkite/ /buildkite
+COPY ./build-tools/* /usr/local/bin/
+COPY docker-config.json /root/.docker/config.json
+
+RUN cp /usr/bin/buildkite-agent /buildkite/bin/buildkite-agent
+VOLUME /buildkite/bin
 
 ENV BUILDKITE_BUILD_PATH=/buildkite/builds \
     BUILDKITE_HOOKS_PATH=/buildkite/hooks \
     BUILDKITE_PLUGINS_PATH=/buildkite/plugins \
-    BUILDKITE_RESOURCES_PATH=/buildkite/resources
+    BUILDKITE_RESOURCES_PATH=/buildkite/resources \
+    BUILDKITE_AGENT_BINARY_PATH=/buildkite/bin/buildkite-agent \
+    BUILDKITE_AGENT_CONFIG=''
 
 ENV AWS_SDK_LOAD_CONFIG=true
-
-COPY docker-config.json /root/.docker/config.json
-COPY docker-config.json /var/lib/buildkite-agent/.docker/config.json
-
-COPY ./buildkite/ /buildkite
-COPY ./build-tools/* /usr/local/bin/
-
-COPY ./docker-credential-ecr-login-no-error /usr/local/bin/docker-credential-ecr-login-no-error
-RUN chmod +x /usr/local/bin/docker-credential-ecr-login-no-error
-
-# configure Buildkite exclusively via ENV
-ENV BUILDKITE_AGENT_CONFIG=''
 
 ENV PYTHONIOENCODING=utf8
 
