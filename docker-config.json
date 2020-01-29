@@ -1,3 +1,5 @@
 {
-  "credsStore": "ecr-login-no-error"
+  "credHelpers": {
+    "221344006312.dkr.ecr.us-west-2.amazonaws.com": "ecr-login-no-error"
+  }
 }
