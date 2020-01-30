@@ -1,0 +1,1 @@
+aws ecs register-task-definition --family buildkite-agent-general-2 --task-role-arn arn:aws:iam::221344006312:role/buildkite-task --execution-role-arn arn:aws:iam::221344006312:role/buildkite-task-execution --container-definitions "$(cat containers.json)" --volumes "$(cat volumes.json)"

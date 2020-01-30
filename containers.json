@@ -1,0 +1,108 @@
+[
+  {
+    "entryPoint": [],
+    "portMappings": [],
+    "command": [],
+    "cpu": 3072,
+    "environment": [
+      {
+        "name": "AWS_ACCOUNT_ID",
+        "value": "221344006312"
+      },
+      {
+        "name": "AWS_DEFAULT_REGION",
+        "value": "us-west-2"
+      },
+      {
+        "name": "AWS_REGION",
+        "value": "us-west-2"
+      },
+      {
+        "name": "BUILDKITE_AGENT_TAGS_FROM_EC2",
+        "value": "true"
+      },
+      {
+        "name": "BUILDKITE_AGENT_NO_COLOR",
+        "value": "true"
+      },
+      {
+        "name": "BUILDKITE_LOG_FORMAT",
+        "value": "json"
+      },
+      {
+        "name": "BUILDKITE_METRICS_DATADOG",
+        "value": "true"
+      },
+      {
+        "name": "BUILDKITE_METRICS_DATADOG_HOST",
+        "value": "172.17.0.1:8125"
+      },
+      {
+        "name": "BUILDKITE_SHELL",
+        "value": "/bin/bash -euo pipefail -c"
+      },
+      {
+        "name": "PYTHONUNBUFFERED",
+        "value": "1"
+      },
+      {
+        "name": "REGISTRY_HOST",
+        "value": "221344006312.dkr.ecr.us-west-2.amazonaws.com"
+      },
+      {
+        "name": "REGISTRY_HOST_ARTIFACTORY",
+        "value": "registry.corp.tc"
+      },
+      {
+        "name": "REGISTRY_HOST_ECR",
+        "value": "221344006312.dkr.ecr.us-west-2.amazonaws.com"
+      }
+    ],
+    "mountPoints": [
+      {
+        "readOnly": false,
+        "containerPath": "/var/run/docker.sock",
+        "sourceVolume": "docker-sock"
+      },
+      {
+        "readOnly": true,
+        "containerPath": "/run/ec2-metadata",
+        "sourceVolume": "ec2-runtime-metadata"
+      },
+      {
+        "readOnly": false,
+        "containerPath": "/buildkite/builds",
+        "sourceVolume": "buildkite-builds"
+      },
+      {
+        "readOnly": false,
+        "containerPath": "/buildkite/bin",
+        "sourceVolume": "buildkite-binaries"
+      }
+    ],
+    "secrets": [
+      {
+        "valueFrom": "/buildkite/artifactory-api-key",
+        "name": "ARTIFACTORY_API_KEY"
+      },
+      {
+        "valueFrom": "/buildkite/artifactory-api-user",
+        "name": "ARTIFACTORY_API_USER"
+      },
+      {
+        "valueFrom": "/buildkite/token",
+        "name": "BUILDKITE_AGENT_TOKEN"
+      }
+    ],
+    "dockerSecurityOptions": [],
+    "memoryReservation": 2048,
+    "volumesFrom": [],
+    "stopTimeout": 3600,
+    "image": "221344006312.dkr.ecr.us-west-2.amazonaws.com/buildkite:176",
+    "links": [],
+    "dockerLabels": {
+      "com.datadoghq.ad.logs": "[{\"service\":\"buildkite\",\"source\":\"buildkite\"}]"
+    },
+    "name": "buildkite-agent"
+  }
+]

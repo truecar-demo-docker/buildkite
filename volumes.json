@@ -1,0 +1,26 @@
+[
+  {
+    "name": "docker-sock",
+    "host": {
+      "sourcePath": "/run/docker.sock"
+    }
+  },
+  {
+    "name": "ec2-runtime-metadata",
+    "host": {
+      "sourcePath": "/run/ec2-metadata"
+    }
+  },
+  {
+    "name": "buildkite-builds",
+    "host": {
+      "sourcePath": "/buildkite/builds"
+    }
+  },
+  {
+    "name": "buildkite-binaries",
+    "host": {
+      "sourcePath": "/buildkite/bin"
+    }
+  }
+]
