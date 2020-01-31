@@ -29,21 +29,39 @@ steps:
       ARTIFACTORY_API_KEY: foo
       ARTIFACTORY_API_USER: buildkite
 
-  - wait
-
-  - label: ':docker: Push final image :latest'
+  - label: ':docker: Push test image :test'
     plugins:
       - docker-compose#v3.0.3:
           push:
-            - agent:$REGISTRY_HOST/buildkite:latest
+            - agent:$REGISTRY_HOST/buildkite:test
+  
   - wait
 
-  - label: ':docker: Push final image :${BUILDKITE_BUILD_NUMBER}'
-    plugins:
-      - docker-compose#v3.0.3:
-          push:
-            - agent:$REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
+  - label: Update test service
+    command: aws ecs update-service --force-new-deployment --service ylim-test-bk --region us-west-2
+    agents:
+      queue: 'deploy'
 
   - wait
+  
+  - label: Integration tests
+    command: ls
+    agents:
+      queue: 'test'
 
-  - command: buildkite-agent meta-data set docker.image_repo $REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
+#  - label: ':docker: Push final image :latest'
+#    plugins:
+#      - docker-compose#v3.0.3:
+#          push:
+#            - agent:$REGISTRY_HOST/buildkite:latest
+#  - wait
+
+#  - label: ':docker: Push final image :${BUILDKITE_BUILD_NUMBER}'
+#    plugins:
+#      - docker-compose#v3.0.3:
+#          push:
+#            - agent:$REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
+
+#  - wait
+
+#  - command: buildkite-agent meta-data set docker.image_repo $REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
