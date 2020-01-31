@@ -38,7 +38,7 @@ steps:
   - wait
 
   - label: Update test service
-    command: aws ecs update-service --force-new-deployment --service ylim-test-bk --region us-west-2
+    command: aws ecs update-service --force-new-deployment --cluster sp-build-buildkite-cluster --service ylim-test-bk --region us-west-2
     agents:
       queue: 'deploy'
 
