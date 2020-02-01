@@ -11,7 +11,7 @@ ECR_TAG="${ECR_REGISTRY}"/test
 
 docker login "${ARTIFACTORY_REGISTRY}" -u "${ARTIFACTORY_USER}" -p "${ARTIFACTORY_PASS}"
 
-docker build --no-cache -f Dockerfile.int -t "${ECR_TAG}" .
+docker build --no-cache -f test/Dockerfile.int -t "${ECR_TAG}" .
 
 docker tag "${ECR_TAG}" "${ARTIFACTORY_TAG}"
 
