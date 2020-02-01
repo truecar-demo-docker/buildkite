@@ -45,9 +45,13 @@ steps:
   - wait
   
   - label: Integration tests
-    command: ls
+    command: /test/integration-tests.sh
+    env:
+      ARTIFACTORY_USER: ssm-parameter:/build/common/artifactory-user
+      ARTIFACTORY_PASS: ssm-parameter:/build/common/artifactory-password
     agents:
       queue: 'test'
+
 
 #  - label: ':docker: Push final image :latest'
 #    plugins:
