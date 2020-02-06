@@ -83,6 +83,5 @@ ENV AWS_SDK_LOAD_CONFIG=true
 
 ENV PYTHONIOENCODING=utf8
 
-STOPSIGNAL SIGINT
 ENTRYPOINT ["/buildkite/entrypoint-agent.sh"]
 CMD ["/usr/bin/buildkite-agent", "start"]
