@@ -19,6 +19,12 @@ function container_id() {
     awk -F/ '/:name=systemd/ {print $NF}' /proc/self/cgroup
 }
 
+func parent_cgroup() {
+    DOCKER_CONTAINER_ID=$(curl -s $ECS_CONTAINER_METADATA_URI | jq -r .DockerId)
+    ECS_TASK_CGROUP=$(docker inspect --format='{{.HostConfig.CgroupParent}}' ${DOCKER_CONTAINER_ID})
+    export ECS_TASK_CGROUP
+}
+
 function configure_agent() {
     if [[ -f /run/ec2-metadata ]]; then
         set -o allexport # this file is lines of `VAR=value` so use allexport to make those vars exported automatically
@@ -48,5 +54,6 @@ function configure_agent() {
 
 configure_agent
 copy_binary
+parent_cgroup
 
 exec "$@"
