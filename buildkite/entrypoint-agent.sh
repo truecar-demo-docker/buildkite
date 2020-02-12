@@ -19,7 +19,7 @@ function container_id() {
     awk -F/ '/:name=systemd/ {print $NF}' /proc/self/cgroup
 }
 
-func parent_cgroup() {
+function parent_cgroup() {
     DOCKER_CONTAINER_ID=$(curl -s $ECS_CONTAINER_METADATA_URI | jq -r .DockerId)
     ECS_TASK_CGROUP=$(docker inspect --format='{{.HostConfig.CgroupParent}}' ${DOCKER_CONTAINER_ID})
     export ECS_TASK_CGROUP
