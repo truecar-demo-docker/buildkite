@@ -20,9 +20,11 @@ function container_id() {
 }
 
 function parent_cgroup() {
-    DOCKER_CONTAINER_ID=$(curl -s $ECS_CONTAINER_METADATA_URI | jq -r .DockerId)
-    ECS_TASK_CGROUP=$(docker inspect --format='{{.HostConfig.CgroupParent}}' ${DOCKER_CONTAINER_ID})
-    export ECS_TASK_CGROUP
+    if [[ -n "${ECS_CONTAINER_METADATA_URI:-}" ]] ; then
+        DOCKER_CONTAINER_ID=$(curl -s $ECS_CONTAINER_METADATA_URI | jq -r .DockerId)
+        ECS_TASK_CGROUP=$(docker inspect --format='{{.HostConfig.CgroupParent}}' ${DOCKER_CONTAINER_ID})
+        export ECS_TASK_CGROUP
+    fi
 }
 
 function configure_agent() {
