@@ -5,6 +5,7 @@
 import os
 import re
 import subprocess
+import sys
 
 import boto3
 from botocore.exceptions import ClientError, ParamValidationError
