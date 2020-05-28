@@ -65,6 +65,8 @@ RUN mkdir -pv \
 COPY ./docker-credential-ecr-login-no-error /usr/local/bin/docker-credential-ecr-login-no-error
 RUN chmod +x /usr/local/bin/docker-credential-ecr-login-no-error
 
+COPY ./docker-credential-tc-registry-true /usr/local/bin/docker-credential-tc-registry-true
+
 COPY ./buildkite/ /buildkite
 COPY ./build-tools/* /usr/local/bin/
 COPY docker-config.json /root/.docker/config.json
