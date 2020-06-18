@@ -1,3 +1,5 @@
+[![Build status](https://badge.buildkite.com/d09557f2da9b53ce3235290829007232ad407ada6f95cfb9d0.svg)](https://buildkite.com/truecar/docker-buildkite)
+
 # docker/buildkite
 
 
