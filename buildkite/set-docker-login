@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+
+import boto3
+import base64
+import sys
+import subprocess
+
+PARAM_NAME = '/common/docker-hub-login'
+
+
+def fetch_credentials():
+    ssm_client = boto3.client('ssm')
+    get_param_resp = ssm_client.get_parameters(
+        Names=[PARAM_NAME],
+        WithDecryption=True
+    )
+
+    b64value = get_param_resp['Parameters'][0]['Value']
+
+    # by convention this is base64(user:pass)
+    user_pass = base64.b64decode(b64value).decode('utf8')
+    user, pw = user_pass.split(':', 1)
+
+    output = {
+        'Username': user,
+        'Secret': pw
+    }
+    return output
+
+
+def main():
+    creds = fetch_credentials()
+
+    cmd = [
+        'docker', 'login',
+        '--username', creds['Username'],
+        '--password-stdin'
+    ]
+    print(' '.join(cmd))
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc.communicate(str.encode(creds['Secret']))
+    retcode = proc.wait()
+    if retcode != 0:
+        raise Exception('docker login failure')
+
+
+if __name__ == '__main__':
+    main()

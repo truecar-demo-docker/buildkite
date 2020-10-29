@@ -46,7 +46,12 @@ function configure_agent() {
     done
 }
 
+function set_docker_login() {
+    /buildkite/set-docker-login
+}
+
 configure_agent
 copy_binary
+set_docker_login
 
 exec "$@"

@@ -5,6 +5,8 @@ steps:
           build: agent
           image-repository: $REGISTRY_HOST/cache/buildkite
           cache-from: agent:$REGISTRY_HOST/cache/buildkite:latest
+    agents:
+      queue: test
 
   - wait
 
@@ -13,6 +15,8 @@ steps:
       - docker-compose#v3.0.3:
           push:
             - agent:$REGISTRY_HOST/cache/buildkite:latest
+    agents:
+      queue: test
 
 
   - label: Test
@@ -28,6 +32,8 @@ steps:
     env:
       ARTIFACTORY_API_KEY: foo
       ARTIFACTORY_API_USER: buildkite
+    agents:
+      queue: test
 
   - wait
 
@@ -36,6 +42,9 @@ steps:
       - docker-compose#v3.0.3:
           push:
             - agent:$REGISTRY_HOST/buildkite:latest
+    agents:
+      queue: test
+
   - wait
 
   - label: ':docker: Push final image :${BUILDKITE_BUILD_NUMBER}'
@@ -43,7 +52,11 @@ steps:
       - docker-compose#v3.0.3:
           push:
             - agent:$REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
+    agents:
+      queue: test
 
   - wait
 
   - command: buildkite-agent meta-data set docker.image_repo $REGISTRY_HOST/buildkite:${BUILDKITE_BUILD_NUMBER}
+    agents:
+      queue: test
