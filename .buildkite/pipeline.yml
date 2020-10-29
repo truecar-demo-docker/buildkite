@@ -5,6 +5,8 @@ steps:
           build: agent
           image-repository: $REGISTRY_HOST/cache/buildkite
           cache-from: agent:$REGISTRY_HOST/cache/buildkite:latest
+    agents:
+      dev: $BUILDKITE_AGENT_META_DATA_DEV
 
   - wait
 
