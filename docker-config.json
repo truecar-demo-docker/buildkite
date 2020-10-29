@@ -1,6 +1,7 @@
 {
   "credHelpers": {
     "221344006312.dkr.ecr.us-west-2.amazonaws.com": "ecr-login-no-error",
+    "https://index.docker.io/v1/": "tc-docker-hub",
     "registry.dev.true.sh": "tc-registry-true"
   }
 }
