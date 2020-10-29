@@ -10,12 +10,12 @@ PARAM_NAME = '/common/docker-hub-login'
 
 def fetch_credentials():
     ssm_client = boto3.client('ssm')
-    get_param_resp = ssm_client.get_parameter(
-        Name=PARAM_NAME,
+    get_param_resp = ssm_client.get_parameters(
+        Names=[PARAM_NAME],
         WithDecryption=True
     )
 
-    b64value = get_param_resp['Parameter']['Value']
+    b64value = get_param_resp['Parameters'][0]['Value']
 
     # by convention this is base64(user:pass)
     user_pass = base64.b64decode(b64value).decode('utf8')
