@@ -15,6 +15,10 @@ function copy_binary() {
     cp -v "$binary_path" /buildkite/bin/
 }
 
+# Based on: https://stackoverflow.com/questions/68816329/how-to-get-docker-container-id-from-within-the-container-with-cgroup-v2/70685581#70685581
+# grep for a line that looks something like this:
+# 598 512 259:1 /var/lib/docker/containers/8926d9d46ad805b89045c101ddc24652e5e7065f27fabc1d298bb0ba276eddd5/resolv.conf /etc/resolv.conf rw,relatime - ext4 /dev/root rw,discard,errors=remount-ro
+# and extract the container id between 'containers' and '/'
 function container_id() {
     cat /proc/self/mountinfo | grep -m 1 -oP '(?<=containers\/).*?(?=\/)'
 }
