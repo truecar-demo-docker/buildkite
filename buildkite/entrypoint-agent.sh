@@ -16,7 +16,7 @@ function copy_binary() {
 }
 
 function container_id() {
-    awk -F/ '/:name=systemd/ {print $NF}' /proc/self/cgroup
+    cat /etc/hostname
 }
 
 function configure_agent() {
