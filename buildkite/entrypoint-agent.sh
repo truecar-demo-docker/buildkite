@@ -16,7 +16,7 @@ function copy_binary() {
 }
 
 function container_id() {
-    cat /etc/hostname
+    cat /proc/self/mountinfo | grep -m 1 -oP '(?<=containers\/).*?(?=\/)'
 }
 
 function configure_agent() {
