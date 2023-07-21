@@ -17,7 +17,6 @@ services:
       - AWS_DEFAULT_REGION=us-west-2
       - AWS_ACCOUNT_ID=221344006312
       - REGISTRY_HOST_ECR
-      - REGISTRY_HOST_ARTIFACTORY
     hostname: buildkite-local
     volumes:
       - ./test/:/test
@@ -34,7 +33,6 @@ services:
       - AWS_DEFAULT_REGION=us-west-2
       - AWS_ACCOUNT_ID=221344006312
       - REGISTRY_HOST_ECR
-      - REGISTRY_HOST_ARTIFACTORY
     volumes:
       - ./test/:/test
       - maven-repo:/mnt/maven-repo
