@@ -25,9 +25,9 @@ RUN curl -fsSL "https://github.com/docker/compose/releases/download/${DOCKER_COM
 
 ARG JQ_VERSION=1.6
 RUN set -x \
-  && curl -fsSL https://raw.githubusercontent.com/stedolan/jq/master/sig/jq-release.key | gpg --import \
-  && curl -fsSL https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64 -o /usr/local/bin/jq \
-  && curl -fsSL https://raw.githubusercontent.com/stedolan/jq/master/sig/v${JQ_VERSION}/jq-linux64.asc | gpg --verify - /usr/local/bin/jq \
+  && curl -fsSL https://raw.githubusercontent.com/jqlang/jq/master/sig/jq-release-old.key | gpg --import \
+  && curl -fsSL https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-linux64 -o /usr/local/bin/jq \
+  && curl -fsSL https://raw.githubusercontent.com/jqlang/jq/master/sig/v${JQ_VERSION}/jq-linux64.asc | gpg --verify - /usr/local/bin/jq \
   && chmod +x /usr/local/bin/jq
 
 # https://github.com/awslabs/amazon-ecr-credential-helper/releases
