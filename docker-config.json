@@ -1,6 +1,5 @@
 {
   "credHelpers": {
-    "221344006312.dkr.ecr.us-west-2.amazonaws.com": "ecr-login-no-error",
-    "registry.dev.true.sh": "tc-registry-true"
+    "221344006312.dkr.ecr.us-west-2.amazonaws.com": "ecr-login-no-error"
   }
 }
